@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using ForecastingGas.Algorithm.Hwes;
 using ForecastingGas.Error_Metrics.Interfaces;
 using ForecastingGas.Error_Metrics.Service;
+using ForecastingGas.Utils.Interfaces;
+using ForecastingGas.Utils.numberGenerator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,7 @@ builder.Services.AddScoped<IGetData, Data>();
 builder.Services.AddScoped<ISaveData, SaveData>();
 builder.Services.AddScoped<IHwes, AdditiveHwes>();
 builder.Services.AddScoped<IError, Error>();
+builder.Services.AddScoped<IDataProvider, Numbers>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

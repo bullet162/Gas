@@ -10,7 +10,6 @@ public interface ISes
 
 public interface IHwes
 {
-    void InitializeComponents(HwesParams hwesParams);
     (List<decimal> trainedForecast, string model, int totalCount) TrainForecast(HwesParams hwesParams);
     List<decimal> GenerateForecasts(HwesParams hwesParams);
 }

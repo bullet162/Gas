@@ -13,19 +13,17 @@ public class Forecast : ControllerBase
 {
     private IGetData _get;
     private ISes _ses;
-    private IHwes _hwes;
     private ISaveData _save;
-    public Forecast(IGetData getData, ISes ses, ISaveData save, IHwes hwes)
+    public Forecast(IGetData getData, ISes ses, ISaveData save)
     {
         _get = getData;
         _ses = ses;
         _save = save;
-        _hwes = hwes;
     }
 
     //forecast ses
     [HttpPost("ses")]
-    public async Task<IActionResult> ForecastSes([FromBody] InputSesParams ses)
+    public async Task<IActionResult> ForecastSes([FromBody] InputSesController ses)
     {
         try
         {

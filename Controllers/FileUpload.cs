@@ -1,6 +1,7 @@
-using ForecastingGas.Data.DataProviders;
+using ForecastingGas.Dto.Responses;
 using ForecastingGas.Dto.Requests;
 using Microsoft.AspNetCore.Mvc;
+using ForecastingGas.Utils.Interfaces;
 
 namespace ForecastingGas.Controllers;
 

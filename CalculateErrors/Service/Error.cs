@@ -5,7 +5,23 @@ namespace ForecastingGas.Error_Metrics.Service;
 
 public class Error : IError
 {
-    public (double Rmse, decimal Mae, decimal Mse, decimal Mape) CalculateErrors(ErrorParams errorParams)
+    public decimal CalculateMse(ErrorParams errorParams)
+    {
+        List<decimal> squaredErrors = new();
+
+        var count = Math.Min(errorParams.ForecastValues.Count, errorParams.ActualValues.Count);
+
+        for (int i = 0; i < count; i++)
+        {
+            decimal error = errorParams.ActualValues[i] - errorParams.ForecastValues[i];
+            squaredErrors.Add(error * error);
+        }
+
+        var mse = squaredErrors.Take(squaredErrors.Count).Average();
+        return mse;
+    }
+
+    public (double Rmse, decimal Mae, decimal Mse, decimal Mape) EvaluateAlgoErrors(ErrorParams errorParams)
     {
         List<decimal> errors = new();
         List<decimal> absError = new();
@@ -33,11 +49,5 @@ public class Error : IError
         var mape = PabsError.Take(PabsError.Count).Average();
 
         return new(rmse, mae, mse, mape);
-    }
-
-    public int Evaluate(decimal Rmse, decimal Mae, decimal Mse, decimal Mape)
-    {
-
-        return 4;
     }
 }

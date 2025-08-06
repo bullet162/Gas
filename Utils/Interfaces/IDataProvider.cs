@@ -1,9 +1,6 @@
-using ForecastingGas.Dto.Requests;
-using ForecastingGas.Dto.Responses;
-using Microsoft.AspNetCore.Components.Forms;
-
-namespace ForecastingGas.Data.DataProviders;
+namespace ForecastingGas.Utils.Interfaces;
 
 public interface IDataProvider
 {
+    List<decimal> RandomGenerator(int count);
 }

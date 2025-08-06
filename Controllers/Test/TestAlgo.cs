@@ -1,4 +1,6 @@
+using ForecastingGas.Algorithm.Gas.Interface;
 using ForecastingGas.Algorithm.Interfaces;
+using ForecastingGas.Utils.Interfaces;
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Error_Metrics.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -7,17 +9,15 @@ namespace ForecastingGas.Controllers;
 
 [ApiController]
 [Route("api/test")]
-public class Test : ControllerBase
+public class Tests : ControllerBase
 {
     private IHwes _hwes;
     private ISes _ses;
-    private IError _error;
 
-    public Test(IHwes hwes, ISes ses, IError error)
+    public Tests(IHwes hwes, ISes ses, IError error)
     {
         _hwes = hwes;
         _ses = ses;
-        _error = error;
     }
 
     [HttpPost("ses")]
@@ -48,8 +48,6 @@ public class Test : ControllerBase
     {
         try
         {
-            _hwes.InitializeComponents(hwesParams);
-
             var param = new HwesParams
             {
                 Alpha = hwesParams.Alpha,
@@ -59,9 +57,6 @@ public class Test : ControllerBase
                 SeasonLength = hwesParams.SeasonLength,
                 ActualValues = hwesParams.ActualValues,
                 ForecastValues = hwesParams.ForecastValues,
-                Level = hwesParams.Level,
-                Trend = hwesParams.Trend,
-                Seasonal = hwesParams.Seasonal
             };
 
             var results = _hwes.TrainForecast(param);
@@ -81,27 +76,5 @@ public class Test : ControllerBase
         {
             return BadRequest($"Error: {ex.Message}");
         }
-    }
-
-    [HttpPost("errors")]
-    public IActionResult CalculateErrors([FromBody] ErrorParams errorParams)
-    {
-        try
-        {
-            var results = _error.CalculateErrors(errorParams);
-
-            return Ok(new
-            {
-                results.Mae,
-                results.Mape,
-                results.Rmse,
-                results.Mse
-            });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest($"Something went wrong: {ex.Message}");
-        }
-
     }
 }
