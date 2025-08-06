@@ -1,0 +1,43 @@
+using ForecastingGas.Dto.Requests;
+using ForecastingGas.Error_Metrics.Interfaces;
+
+namespace ForecastingGas.Error_Metrics.Service;
+
+public class Error : IError
+{
+    public (double Rmse, decimal Mae, decimal Mse, decimal Mape) CalculateErrors(ErrorParams errorParams)
+    {
+        List<decimal> errors = new();
+        List<decimal> absError = new();
+        List<decimal> squaredErrors = new();
+        List<decimal> PabsError = new();
+
+        var count = Math.Min(errorParams.ForecastValues.Count, errorParams.ActualValues.Count);
+
+        for (int i = errorParams.SeasonLength + 2; i < count; i++)
+        {
+            decimal error = errorParams.ActualValues[i] - errorParams.ForecastValues[i];
+            decimal abs = Math.Abs(error);
+            decimal percAbs = (errorParams.ActualValues[i] == 0) ? 0 : (abs / errorParams.ActualValues[i]) * 100;
+
+            errors.Add(error);
+            absError.Add(abs);
+            squaredErrors.Add(error * error);
+            PabsError.Add(percAbs);
+        }
+
+
+        var mae = absError.Take(absError.Count).Average();
+        var mse = squaredErrors.Take(squaredErrors.Count).Average();
+        var rmse = Math.Sqrt((double)mse);
+        var mape = PabsError.Take(PabsError.Count).Average();
+
+        return new(rmse, mae, mse, mape);
+    }
+
+    public int Evaluate(decimal Rmse, decimal Mae, decimal Mse, decimal Mape)
+    {
+
+        return 4;
+    }
+}
