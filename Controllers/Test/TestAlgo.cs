@@ -13,15 +13,17 @@ public class Tests : ControllerBase
 {
     private IHwes _hwes;
     private ISes _ses;
+    private IMtGas _gas;
 
-    public Tests(IHwes hwes, ISes ses, IError error)
+    public Tests(IHwes hwes, ISes ses, IError error, IMtGas gas)
     {
         _hwes = hwes;
         _ses = ses;
+        _gas = gas;
     }
 
     [HttpPost("ses")]
-    public IActionResult ForecastSes(SesParams sesParams)
+    public IActionResult ForecastSes([FromBody] SesParams sesParams)
     {
         try
         {
@@ -30,6 +32,7 @@ public class Tests : ControllerBase
             var forecast = results.trainedForecast;
             var model = results.model;
             var count = results.totalCount;
+
             return Ok(new
             {
                 forecast,
@@ -44,7 +47,7 @@ public class Tests : ControllerBase
     }
 
     [HttpPost("hwes")]
-    public IActionResult ForecastHwes(HwesParams hwesParams)
+    public IActionResult ForecastHwes([FromBody] HwesParams hwesParams)
     {
         try
         {
@@ -77,4 +80,26 @@ public class Tests : ControllerBase
             return BadRequest($"Error: {ex.Message}");
         }
     }
+
+    //     [HttpPost("MTGas")]
+    //     public IActionResult ForecastGas([FromBody] int id)
+    //     {
+    //         try
+    //         {
+    //             var results = _gas.ApplyMtGas();
+
+    //             return Ok(new
+    //             {
+    //                 results.ColumnName,
+    //                 results.TotalCount,
+    //                 results.AlgoType,
+    //                 results.ForecastValues,
+    //                 results.ActualValues
+    //             });
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             return BadRequest($"Something went wrong: {ex.Message}");
+    //         }
+    //     }
 }

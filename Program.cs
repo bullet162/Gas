@@ -9,6 +9,7 @@ using ForecastingGas.Error_Metrics.Interfaces;
 using ForecastingGas.Error_Metrics.Service;
 using ForecastingGas.Utils.Interfaces;
 using ForecastingGas.Utils.numberGenerator;
+using ForecastingGas.Utils.Csv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,7 @@ builder.Services.AddScoped<ISaveData, SaveData>();
 builder.Services.AddScoped<IHwes, AdditiveHwes>();
 builder.Services.AddScoped<IError, Error>();
 builder.Services.AddScoped<IDataProvider, Numbers>();
+builder.Services.AddScoped<IUploadCsv, UploadCsv>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

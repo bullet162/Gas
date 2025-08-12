@@ -65,4 +65,29 @@ public class SaveData : ISaveData
             return true;
         }
     }
+
+    public async Task<bool> SaveErrorData(ErrorOutput output, string algoType, string columnName)
+    {
+        var results = new ErrorValues
+        {
+            ColumnName = columnName,
+            AlgoType = algoType,
+            RMSE = output.RMSE,
+            MSE = output.MSE,
+            MAE = output.MAE,
+            MAPE = output.MAPE
+        };
+
+        if (results == null)
+            return false;
+
+        else
+        {
+            await _DB.AddAsync(results);
+            await _DB.SaveChangesAsync();
+
+            return true;
+        }
+
+    }
 }

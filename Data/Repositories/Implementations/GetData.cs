@@ -11,7 +11,19 @@ public class Data : IGetData
     {
         _DbContext = appDbContext;
     }
+    //Get all ColumnName and id
+    public async Task<(List<string> ColumnNames, List<int> Ids)> GetAllColumnNamesAndId()
+    {
+        var listColumnName = await _DbContext.DataDescriptions
+        .Select(x => x.ColumnName)
+        .ToListAsync();
 
+        var listId = await _DbContext.DataDescriptions
+        .Select(x => x.Id)
+        .ToListAsync();
+
+        return new(listColumnName, listId);
+    }
 
     //Get ColumnName and ActualValues by id
     public async Task<(List<decimal> Values, string ColumnName)> ActualValues(int id)

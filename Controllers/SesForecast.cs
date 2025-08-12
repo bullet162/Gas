@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers;
 
 [ApiController]
-[Route("api/forecast")]
+[Route("api/sesForecast")]
 public class Forecast : ControllerBase
 {
     private IGetData _get;

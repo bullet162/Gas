@@ -18,7 +18,7 @@ public class RawDataOutput
 
 public class ErrorOutput
 {
-    public decimal RMSE { get; set; } = new();
+    public double RMSE { get; set; } = new();
     public decimal MAE { get; set; } = new();
     public decimal MAPE { get; set; } = new();
     public decimal MSE { get; set; } = new();

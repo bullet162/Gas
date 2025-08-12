@@ -1,4 +1,5 @@
 using ForecastingGas.Dto.Requests;
+using ForecastingGas.Dto.Responses;
 using ForecastingGas.Error_Metrics.Interfaces;
 
 namespace ForecastingGas.Error_Metrics.Service;
@@ -21,7 +22,7 @@ public class Error : IError
         return mse;
     }
 
-    public (double Rmse, decimal Mae, decimal Mse, decimal Mape) EvaluateAlgoErrors(ErrorParams errorParams)
+    public ErrorOutput EvaluateAlgoErrors(ErrorParams errorParams)
     {
         List<decimal> errors = new();
         List<decimal> absError = new();
@@ -48,6 +49,12 @@ public class Error : IError
         var rmse = Math.Sqrt((double)mse);
         var mape = PabsError.Take(PabsError.Count).Average();
 
-        return new(rmse, mae, mse, mape);
+        return new ErrorOutput
+        {
+            MAE = mae,
+            MSE = mse,
+            RMSE = rmse,
+            MAPE = mape
+        };
     }
 }

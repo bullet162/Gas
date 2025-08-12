@@ -7,6 +7,7 @@ public class GasRequest
     [Range(1, 10, ErrorMessage = "Forecast horizon range: (1 - 10)!")]
     public int ForecastHorizon { get; set; } = new();
     public int LocalWindow { get; set; } = new();
+    public string ColumnName { get; set; } = string.Empty;
 }
 
 public class GasRequestController

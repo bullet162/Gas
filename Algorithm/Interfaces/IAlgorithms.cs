@@ -1,5 +1,4 @@
 using ForecastingGas.Dto.Requests;
-using ForecastingGas.Dto.Responses;
 
 namespace ForecastingGas.Algorithm.Interfaces;
 
