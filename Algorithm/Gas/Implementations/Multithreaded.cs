@@ -30,26 +30,45 @@ public class MTGas : IMtGas
     {
         var results = _ses.SesForecast(ses);
 
-        return results.trainedForecast;
+        return results.ForecastValues;
     }
 
-    public List<decimal> CalculateHwes(HwesParams hwesParams)
+    public ALgoOutput CalculateHwes(HwesParams hwesParams)
     {
+
         var results = _hwes.TrainForecast(hwesParams);
 
-        return results.trainedForecast;
+        return new ALgoOutput
+        {
+            ForecastValues = results.ForecastValues,
+            SeasonalValues = results.SeasonalValues,
+            LevelValues = results.LevelValues,
+            TrendValues = results.TrendValues
+        };
     }
 
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, SesParams sesParams, GasRequest gasRequest)
     {
         List<decimal> gasForecast = new();
+        List<decimal> seasonalValues = new();
+        List<decimal> trendValues = new();
+        List<decimal> levelValues = new();
         const string model = "GAS";
 
-        var data = Math.Max(hwesParams.ActualValues.Count, sesParams.ActualValues.Count);
+        int windowSize = hwesParams.ActualValues.Count / 2;
+        hwesParams.SeasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
-        for (int i = gasRequest.LocalWindow; i < data; i++)
+        if (windowSize < hwesParams.SeasonLength * 2)
+            throw new ArgumentException(
+                $"Window size ({windowSize}) too small for seasonLength {hwesParams.SeasonLength}. " +
+                "Need at least 2 × seasonLength points.");
+
+        for (int end = windowSize; end <= hwesParams.ActualValues.Count; end++)
         {
-            var windowedData = hwesParams.ActualValues.Take(i).ToList();
+            var windowedData = hwesParams.ActualValues
+                .Skip(end - windowSize)
+                .Take(windowSize)
+                .ToList();
 
             var newHwesParams = new HwesParams
             {
@@ -57,10 +76,14 @@ public class MTGas : IMtGas
                 Alpha = hwesParams.Alpha,
                 Beta = hwesParams.Beta,
                 Gamma = hwesParams.Gamma,
-                SeasonLength = hwesParams.SeasonLength,
+                SeasonLength = Math.Min(hwesParams.SeasonLength, windowedData.Count / 2),
                 ForecasHorizon = hwesParams.ForecasHorizon,
-                ForecastValues = hwesParams.ForecastValues
+                ForecastValues = new List<decimal>(),
+                SeasonalValues = new List<decimal>(),
+                LevelValues = new List<decimal>(),
+                TrendValues = new List<decimal>()
             };
+            hwesParams.SeasonLength = newHwesParams.SeasonLength;
 
             var newSesParams = new SesParams
             {
@@ -68,24 +91,14 @@ public class MTGas : IMtGas
                 Alpha = sesParams.Alpha
             };
 
+
             var forecastSes = new List<decimal>();
-            var forecastHwes = new List<decimal>();
+            var forecastHwes = new ALgoOutput();
 
-            Thread ses = new Thread
-            (
-                () => forecastSes = CalculateSes(newSesParams)
-            );
-
-            Thread hwes = new Thread
-            (
+            Parallel.Invoke(
+                () => forecastSes = CalculateSes(newSesParams),
                 () => forecastHwes = CalculateHwes(newHwesParams)
             );
-
-            ses.Start();
-            hwes.Start();
-
-            ses.Join();
-            hwes.Join();
 
             var sesError = new ErrorParams
             {
@@ -97,7 +110,7 @@ public class MTGas : IMtGas
             var hwesError = new ErrorParams
             {
                 ActualValues = windowedData,
-                ForecastValues = forecastHwes,
+                ForecastValues = forecastHwes.ForecastValues,
                 SeasonLength = hwesParams.SeasonLength
             };
 
@@ -106,9 +119,32 @@ public class MTGas : IMtGas
 
             var weights = _model.CalculateWeights(mseSes, mseHwes);
 
-            var forecast = _model.GasWeightedForecast(forecastSes, forecastHwes, weights.weightSes, weights.weightHwes);
+            var forecast = _model.GasWeightedForecast(forecastSes, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
 
-            gasForecast.AddRange(forecast);
+            if (end == windowSize)
+            {
+                // Initial iteration: add all forecast values
+                gasForecast.AddRange(forecast);
+
+                // Align HWES components with full forecast
+                seasonalValues.AddRange(forecastHwes.SeasonalValues);
+                trendValues.AddRange(forecastHwes.TrendValues);
+                levelValues.AddRange(forecastHwes.LevelValues);
+            }
+            else if (forecast.Any())
+            {
+                // Subsequent iterations: only add last forecast point
+                gasForecast.Add(forecast.Last());
+
+                // Add corresponding last component from HWES
+                if (forecastHwes.SeasonalValues.Any())
+                    seasonalValues.Add(forecastHwes.SeasonalValues.Last());
+                if (forecastHwes.TrendValues.Any())
+                    trendValues.Add(forecastHwes.TrendValues.Last());
+                if (forecastHwes.LevelValues.Any())
+                    levelValues.Add(forecastHwes.LevelValues.Last());
+            }
+
         }
 
         return new ALgoOutput
@@ -117,8 +153,13 @@ public class MTGas : IMtGas
             ActualValues = hwesParams.ActualValues,
             ColumnName = gasRequest.ColumnName,
             TotalCount = gasForecast.Count,
-            AlgoType = model
+            AlgoType = model,
+            LevelValues = levelValues,
+            TrendValues = trendValues,
+            SeasonalValues = seasonalValues,
+            SeasonLength = hwesParams.SeasonLength
         };
+
     }
 
 }

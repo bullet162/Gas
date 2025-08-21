@@ -6,7 +6,7 @@ namespace ForecastingGas.Algorithm.Ses;
 
 public class ForecastSes : ISes
 {
-    public (List<decimal> trainedForecast, string model, int totalCount) SesForecast(SesParams ses)
+    public ALgoOutput SesForecast(SesParams ses)
     {
         const string Name = "SES";
         var alpha = ses.Alpha;
@@ -23,6 +23,14 @@ public class ForecastSes : ISes
 
         int TotalCount = output.ForecastValues.Count;
 
-        return new(output.ForecastValues, Name, TotalCount);
+        var result = new ALgoOutput
+        {
+            ForecastValues = output.ForecastValues,
+            ActualValues = data,
+            AlgoType = Name,
+            TotalCount = TotalCount
+        };
+
+        return result;
     }
 }

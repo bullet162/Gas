@@ -3,28 +3,37 @@ using System.Collections.Generic;
 using System.Linq;
 using ForecastingGas.Algorithm.Interfaces;
 using ForecastingGas.Dto.Requests;
+using ForecastingGas.Dto.Responses;
 
 namespace ForecastingGas.Algorithm.Hwes
 {
     public class AdditiveHwes : IHwes
     {
-        private List<decimal> _level = new();
-        private List<decimal> _trend = new();
-        private List<decimal> _seasonal = new();
+
         private int _seasonLength;
 
-        public (List<decimal> trainedForecast, string model, int totalCount) TrainForecast(HwesParams hwesParams)
+        public ALgoOutput TrainForecast(HwesParams hwesParams)
         {
+            List<decimal> _level = hwesParams.LevelValues;
+            List<decimal> _trend = hwesParams.TrendValues;
+            List<decimal> _seasonal = hwesParams.SeasonalValues;
 
             _seasonLength = hwesParams.SeasonLength;
             var data = hwesParams.ActualValues;
+
+            if (data.Count < 2 * _seasonLength)
+            {
+                throw new ArgumentOutOfRangeException(
+                    $"Need at least {2 * _seasonLength} data points for seasonLength {_seasonLength}, " +
+                    $"but only {data.Count} were provided.");
+            }
 
             var initialLevel = data.Take(_seasonLength).Average();
 
             decimal sum = 0;
             for (int i = 0; i < _seasonLength; i++)
             {
-                sum += (data[_seasonLength + i] - data[i]) / _seasonLength;
+                sum += (data[i + _seasonLength] - data[i]) / _seasonLength;
                 _level.Add(0.0M);
                 _trend.Add(0.0M);
             }
@@ -33,8 +42,9 @@ namespace ForecastingGas.Algorithm.Hwes
 
             for (int i = 0; i < _seasonLength; i++)
             {
-                _seasonal.Add(data[i] - _level[0] - _trend[0] * i);
+                _seasonal.Add(data[i] - initialLevel);
             }
+
             for (int i = 0; i < _seasonLength + 1; i++)
             {
                 hwesParams.ForecastValues.Add(0.0m);
@@ -74,11 +84,28 @@ namespace ForecastingGas.Algorithm.Hwes
                 }
 
             }
-            return new(hwesParams.ForecastValues, modelName, hwesParams.ForecastValues.Count);
+
+            var results = new ALgoOutput
+            {
+                ForecastValues = hwesParams.ForecastValues,
+                ActualValues = hwesParams.ActualValues,
+                TotalCount = hwesParams.ActualValues.Count,
+                AlgoType = modelName,
+                LevelValues = _level,
+                TrendValues = _trend,
+                SeasonalValues = _seasonal,
+                SeasonLength = _seasonLength
+            };
+
+            return results;
         }
 
         public List<decimal> GenerateForecasts(HwesParams hwesParams)
         {
+            List<decimal> _level = hwesParams.LevelValues;
+            List<decimal> _trend = hwesParams.TrendValues;
+            List<decimal> _seasonal = hwesParams.SeasonalValues;
+
             var horizon = hwesParams.ForecasHorizon;
             hwesParams.ForecastValues = new();
             var forecasts = hwesParams.ForecastValues;

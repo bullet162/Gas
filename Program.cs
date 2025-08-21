@@ -10,6 +10,10 @@ using ForecastingGas.Error_Metrics.Service;
 using ForecastingGas.Utils.Interfaces;
 using ForecastingGas.Utils.numberGenerator;
 using ForecastingGas.Utils.Csv;
+using ForecastingGas.Algorithm.Gas.Interface;
+using ForecastingGas.Algorithm.Gas.Implementations;
+using ForecastingGas.Algorithm.Gas.Implementations.Utils;
+using ForecastingGas.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +28,10 @@ builder.Services.AddScoped<IHwes, AdditiveHwes>();
 builder.Services.AddScoped<IError, Error>();
 builder.Services.AddScoped<IDataProvider, Numbers>();
 builder.Services.AddScoped<IUploadCsv, UploadCsv>();
+builder.Services.AddScoped<IMtGas, MTGas>();
+builder.Services.AddScoped<IModel, WeightedForecast>();
+builder.Services.AddScoped<IGetForecastValues, GetForecastValues>();
+builder.Services.AddScoped<IDeleteForecast, DeleteForecast>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

@@ -14,13 +14,14 @@ public class Error : IError
 
         for (int i = 0; i < count; i++)
         {
-            decimal error = errorParams.ActualValues[i] - errorParams.ForecastValues[i];
-            squaredErrors.Add(error * error);
+            double error = (double)errorParams.ActualValues[i] - (double)errorParams.ForecastValues[i];
+            squaredErrors.Add((decimal)Math.Pow(error, 2));
         }
 
-        var mse = squaredErrors.Take(squaredErrors.Count).Average();
+        var mse = squaredErrors.Average();
         return mse;
     }
+
 
     public ErrorOutput EvaluateAlgoErrors(ErrorParams errorParams)
     {

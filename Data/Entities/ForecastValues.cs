@@ -14,6 +14,16 @@ public class ForecastDescription
     public int TotalCount { get; set; }
     public List<ForecastValues> GetForecastValues { get; set; } = null!;
 
+    [Column(TypeName = "nvarchar(max)")]
+    public List<decimal> LevelValues { get; set; } = new();
+
+    [Column(TypeName = "nvarchar(max)")]
+    public List<decimal> TrendValues { get; set; } = new();
+
+    [Column(TypeName = "nvarchar(max)")]
+    public List<decimal> SeasonalValues { get; set; } = new();
+
+    public int SeasonLength { get; set; } = new();
 }
 public class ForecastValues
 {

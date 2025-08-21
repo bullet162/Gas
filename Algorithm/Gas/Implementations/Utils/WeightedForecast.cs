@@ -17,11 +17,12 @@ public class WeightedForecast : IModel
     {
         var forecast = new List<decimal>();
 
-
-        for (int i = 0; i < fSes.Count; i++)
+        var minCount = Math.Min(fSes.Count, fHwes.Count);
+        for (int i = 0; i < minCount; i++)
         {
             forecast.Add((weightSes * fSes[i]) + (weightHwes * fHwes[i]));
         }
+
         return forecast;
     }
 }

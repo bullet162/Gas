@@ -7,13 +7,19 @@ public class ALgoOutput
     public string ColumnName { get; set; } = string.Empty;
     public int TotalCount { get; set; } = new();
     public string AlgoType { get; set; } = string.Empty;
+    public List<decimal> LevelValues { get; set; } = new();
+    public List<decimal> TrendValues { get; set; } = new();
+    public List<decimal> SeasonalValues { get; set; } = new();
+    public int SeasonLength { get; set; } = new();
 }
 
 public class RawDataOutput
 {
+    public int Id { get; set; }
     public List<decimal> ActualValues { get; set; } = new();
     public int TotalCount { get; set; } = new();
     public string ColumnName { get; set; } = string.Empty;
+    public DateTime DateOfEntry { get; set; }
 }
 
 public class ErrorOutput

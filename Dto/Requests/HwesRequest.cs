@@ -13,11 +13,15 @@ public class HwesParams
     // [MinLength(64, ErrorMessage = "Actual Values must have atleast 64 values for Hwes to train!")]
     public List<decimal> ActualValues { get; set; } = new();
     public List<decimal> ForecastValues { get; set; } = new();
+    public List<decimal> SeasonalValues { get; set; } = new();
+    public List<decimal> TrendValues { get; set; } = new();
+    public List<decimal> LevelValues { get; set; } = new();
 
 }
 
 public class InputHwesController
 {
+    public string ColumnName { get; set; } = string.Empty;
     public int Id { get; set; } = new();
 
     [Range(0.1, 0.9, ErrorMessage = "Alpha Value: (0.1 - 0.9)!")]

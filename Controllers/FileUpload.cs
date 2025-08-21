@@ -18,6 +18,7 @@ public class File : ControllerBase
         _save = save;
     }
 
+    //search for libraries for api callings
     [HttpPost("csvColumnNames")]
     public async Task<IActionResult> UploadCsvforColumnNames([FromForm] FileUpload fileUpload)
     {
@@ -49,12 +50,7 @@ public class File : ControllerBase
 
             await _save.SaveRawData(saveResult);
 
-            return Ok(new
-            {
-                result.columnName,
-                result.actualValues,
-                result.totalCount
-            });
+            return Ok("successfully saved actual values");
         }
         catch (Exception ex)
         {

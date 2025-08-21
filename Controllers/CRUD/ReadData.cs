@@ -14,17 +14,35 @@ public class ReadController : ControllerBase
         _get = get;
     }
 
-    [HttpPost("getColumnNamesAndId")]
+    [HttpGet("getColumnNamesAndId")]
     public async Task<IActionResult> GetColumnNamesAndId()
     {
         try
         {
             var result = await _get.GetAllColumnNamesAndId();
 
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return NotFound($"Something went wrong: {ex.Message}");
+        }
+    }
+
+    [HttpGet("getActualValues")]
+    public async Task<IActionResult> GetActualValues([FromQuery] string columnName)
+    {
+        try
+        {
+            var result = await _get.ActualValues(columnName);
+
+            if (result.Values.Count == 0 && result.ColumnName == string.Empty)
+                return NotFound("No actual values found for the requested Id.");
+
             return Ok(new
             {
-                result.Ids,
-                result.ColumnNames
+                result.ColumnName,
+                result.Values
             });
         }
         catch (Exception ex)

@@ -9,12 +9,12 @@ namespace ForecastingGas.Controllers;
 
 [ApiController]
 [Route("api/sesForecast")]
-public class Forecast : ControllerBase
+public class ForecastSes : ControllerBase
 {
-    private IGetData _get;
+    private readonly IGetData _get;
     private ISes _ses;
     private ISaveData _save;
-    public Forecast(IGetData getData, ISes ses, ISaveData save)
+    public ForecastSes(IGetData getData, ISes ses, ISaveData save)
     {
         _get = getData;
         _ses = ses;
@@ -23,11 +23,11 @@ public class Forecast : ControllerBase
 
     //forecast ses
     [HttpPost("ses")]
-    public async Task<IActionResult> ForecastSes([FromBody] InputSesController ses)
+    public async Task<IActionResult> Forecast([FromBody] InputSesController ses)
     {
         try
         {
-            var data = await _get.ActualValues(ses.Id);
+            var data = await _get.ActualValues(ses.ColumnName);
             SesParams sesParams = new SesParams
             {
                 ActualValues = data.Values,
@@ -37,20 +37,19 @@ public class Forecast : ControllerBase
 
             var output = new ALgoOutput
             {
-                AlgoType = result.Item2,
+                AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
-                TotalCount = result.Item3,
-                ForecastValues = result.Item1
+                TotalCount = result.TotalCount,
+                ForecastValues = result.ForecastValues
             };
 
-            // await _save.SaveDatas(output);
-            return Ok(result.Item1);
+            await _save.SaveDatas(output);
+            return Ok("Forecasting completed successfully.");
         }
         catch (Exception ex)
         {
             return BadRequest($"Something went wrong: {ex.Message}");
         }
     }
-
 
 }
