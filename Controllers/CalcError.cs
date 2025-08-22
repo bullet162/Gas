@@ -48,9 +48,11 @@ public class CalcError : ControllerBase
             if (!algoData.Any() || algoData == null)
                 return NotFound("No Data Found!");
 
-            var seasonLength = fDatas
-            .Where(x => x.AlgoType.Trim().ToLower() == "gas" && x.ColumnName.Trim().ToLower() == headerName.Trim().ToLower())
-            .Select(d => d.SeasonLength)
+            var fdescriptions = await _getForecastValues.GetForecastDescriptions();
+
+            var seasonLength = fdescriptions
+            .Where(x => x.ColumnName == headerName && x.AlgoType.ToLower() == "gas".ToLower())
+            .Select(x => x.SeasonLength)
             .FirstOrDefault();
 
             var errorParams = new ErrorParams
@@ -62,7 +64,11 @@ public class CalcError : ControllerBase
 
             var error = _calcError.EvaluateAlgoErrors(errorParams);
 
-            return Ok(error);
+            return Ok(new
+            {
+                seasonLength,
+                error
+            });
         }
         catch (Exception ex)
         {

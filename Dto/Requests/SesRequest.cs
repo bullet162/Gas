@@ -14,7 +14,4 @@ public class InputSesController
 {
     [Required]
     public string ColumnName { get; set; } = string.Empty;
-
-    [Range(0.1, 0.9, ErrorMessage = "Alpha Value: (0.1 - 0.9)!")]
-    public decimal Alpha { get; set; } = new();
 }

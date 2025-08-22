@@ -5,7 +5,18 @@ namespace ForecastingGas.Algorithm.Interfaces;
 
 public interface ISes
 {
-    ALgoOutput SesForecast(SesParams ses);
+    ALgoOutput SesForecast(decimal alphA, List<decimal> datA);
+}
+
+public interface ISearch
+{
+    decimal GenerateOptimalAlpha(List<decimal> actualValues);
+    (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
+    IHwes hwes,
+    List<decimal> actualData,
+    int seasonLength,
+    int steps = 10);
+
 }
 
 public interface IHwes

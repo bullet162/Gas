@@ -18,17 +18,20 @@ public class MTGas : IMtGas
     private IHwes _hwes;
     private IError _error;
     private IModel _model;
-    public MTGas(ISes ses, IHwes hwes, IError error, IModel model)
+    private ISearch _search;
+    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search)
     {
         _ses = ses;
         _hwes = hwes;
         _error = error;
         _model = model;
+        _search = search;
     }
 
     public List<decimal> CalculateSes(SesParams ses)
     {
-        var results = _ses.SesForecast(ses);
+        var alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
+        var results = _ses.SesForecast(alpha, ses.ActualValues);
 
         return results.ForecastValues;
     }
@@ -47,7 +50,7 @@ public class MTGas : IMtGas
         };
     }
 
-    public ALgoOutput ApplyMtGas(HwesParams hwesParams, SesParams sesParams, GasRequest gasRequest)
+    public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
@@ -70,12 +73,14 @@ public class MTGas : IMtGas
                 .Take(windowSize)
                 .ToList();
 
+            var optimalParams = _search.GridSearchHWES(_hwes, windowedData, hwesParams.SeasonLength, steps: 10);
+
             var newHwesParams = new HwesParams
             {
                 ActualValues = windowedData,
-                Alpha = hwesParams.Alpha,
-                Beta = hwesParams.Beta,
-                Gamma = hwesParams.Gamma,
+                Alpha = optimalParams.alpha,
+                Beta = optimalParams.beta,
+                Gamma = optimalParams.gamma,
                 SeasonLength = Math.Max(2, Math.Min(hwesParams.SeasonLength, windowedData.Count / 2)),
                 ForecasHorizon = hwesParams.ForecasHorizon,
                 ForecastValues = new List<decimal>(),
@@ -87,9 +92,8 @@ public class MTGas : IMtGas
             var newSesParams = new SesParams
             {
                 ActualValues = windowedData,
-                Alpha = sesParams.Alpha
+                Alpha = new decimal()
             };
-
 
             var forecastSes = new List<decimal>();
             var forecastHwes = new ALgoOutput();

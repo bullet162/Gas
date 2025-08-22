@@ -12,12 +12,14 @@ public class HwesForecast : ControllerBase
     private readonly IGetData _get;
     private IHwes _hwes;
     private ISaveData _save;
+    private ISearch _search;
 
-    public HwesForecast(IGetData getData, IHwes hwes, ISaveData save)
+    public HwesForecast(IGetData getData, IHwes hwes, ISaveData save, ISearch search)
     {
         _get = getData;
         _hwes = hwes;
         _save = save;
+        _search = search;
     }
 
     [HttpPost("hwes")]
@@ -26,20 +28,20 @@ public class HwesForecast : ControllerBase
         try
         {
             var data = await _get.ActualValues(hwesParams.ColumnName);
+            var parameters = _search.GridSearchHWES(_hwes, data.Values, hwesParams.SeasonLength);
             var parametersHwes = new HwesParams
             {
                 ActualValues = data.Values,
                 SeasonLength = hwesParams.SeasonLength,
-                Alpha = hwesParams.Alpha,
-                Beta = hwesParams.Beta,
-                Gamma = hwesParams.Gamma,
+                Alpha = parameters.alpha,
+                Beta = parameters.beta,
+                Gamma = parameters.gamma,
                 LevelValues = new List<decimal>(),
                 TrendValues = new List<decimal>(),
                 SeasonalValues = new List<decimal>(),
                 ForecastValues = new List<decimal>(),
                 ForecasHorizon = hwesParams.ForecasHorizon
             };
-
             var result = _hwes.TrainForecast(parametersHwes);
             var seasonCount = result.SeasonalValues.Count;
             var trendCount = result.TrendValues.Count;

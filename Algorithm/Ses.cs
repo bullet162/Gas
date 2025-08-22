@@ -6,11 +6,11 @@ namespace ForecastingGas.Algorithm.Ses;
 
 public class ForecastSes : ISes
 {
-    public ALgoOutput SesForecast(SesParams ses)
+    public ALgoOutput SesForecast(decimal alphA, List<decimal> datA)
     {
         const string Name = "SES";
-        var alpha = ses.Alpha;
-        var data = ses.ActualValues;
+        var alpha = alphA;
+        var data = datA;
         var output = new ALgoOutput();
 
         for (int i = 0; i < data.Count; i++)

@@ -14,11 +14,13 @@ public class ForecastSes : ControllerBase
     private readonly IGetData _get;
     private ISes _ses;
     private ISaveData _save;
-    public ForecastSes(IGetData getData, ISes ses, ISaveData save)
+    private ISearch _search;
+    public ForecastSes(IGetData getData, ISes ses, ISaveData save, ISearch search)
     {
         _get = getData;
         _ses = ses;
         _save = save;
+        _search = search;
     }
 
     //forecast ses
@@ -28,12 +30,10 @@ public class ForecastSes : ControllerBase
         try
         {
             var data = await _get.ActualValues(ses.ColumnName);
-            SesParams sesParams = new SesParams
-            {
-                ActualValues = data.Values,
-                Alpha = ses.Alpha
-            };
-            var result = _ses.SesForecast(sesParams);
+
+            var alpha = _search.GenerateOptimalAlpha(data.Values);
+
+            var result = _ses.SesForecast(alpha, data.Values);
 
             var output = new ALgoOutput
             {

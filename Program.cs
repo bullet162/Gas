@@ -14,6 +14,7 @@ using ForecastingGas.Algorithm.Gas.Interface;
 using ForecastingGas.Algorithm.Gas.Implementations;
 using ForecastingGas.Algorithm.Gas.Implementations.Utils;
 using ForecastingGas.Repositories.Implementations;
+using ForecastingGas.Algorithm;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,7 @@ builder.Services.AddScoped<IMtGas, MTGas>();
 builder.Services.AddScoped<IModel, WeightedForecast>();
 builder.Services.AddScoped<IGetForecastValues, GetForecastValues>();
 builder.Services.AddScoped<IDeleteForecast, DeleteForecast>();
+builder.Services.AddScoped<ISearch, GridSearch>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

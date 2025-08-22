@@ -5,7 +5,7 @@ namespace ForecastingGas.Algorithm.Gas.Interface;
 
 public interface IMtGas
 {
-    ALgoOutput ApplyMtGas(HwesParams hwesParams, SesParams sesParams, GasRequest gasRequest);
+    ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest);
 }
 
 public interface IModel

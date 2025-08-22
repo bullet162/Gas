@@ -32,7 +32,7 @@ public class ReadFController : ControllerBase
         }
     }
 
-    [HttpGet("getFActualValues")]
+    [HttpGet("getForecastValues")]
     public async Task<IActionResult> GetFActualValues([FromQuery] string columnName)
     {
         try
