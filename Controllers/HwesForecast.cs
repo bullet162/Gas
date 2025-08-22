@@ -50,7 +50,11 @@ public class HwesForecast : ControllerBase
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
                 TotalCount = result.ForecastValues.Count,
-                ForecastValues = result.ForecastValues
+                ForecastValues = result.ForecastValues,
+                LevelValues = result.LevelValues,
+                TrendValues = result.TrendValues,
+                SeasonalValues = result.SeasonalValues,
+                SeasonLength = result.SeasonLength
             };
 
             await _save.SaveDatas(saveResult);

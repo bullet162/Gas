@@ -23,20 +23,50 @@ public class CalcError : ControllerBase
         _getForecastValues = getForecastValues;
     }
 
-    // [HttpPost("calculateErrorByIdOfForecast")]
-    // public async Task<IActionResult> CalculateError([FromBody] int Id)
-    // {
-    //     try
-    //     {
-    //         var fData = await _getForecastValues.GetForecastValuesById(Id);
+    [HttpPost("AlgorithmEvaluation")]
+    public async Task<IActionResult> EvaluateAlgorithms([FromBody] CalcErrors calcError)
+    {
+        try
+        {
+            var AlgoType = calcError.AlgoType;
+            var headerName = calcError.ColumnName;
 
-    //         var actualData = await _getData.ActualValues(fData.ColumnName);
+            if (string.IsNullOrWhiteSpace(AlgoType))
+                return BadRequest("Invalid AlgorithmType!");
 
-    //         var ErrorParams = new ErrorParams
-    //         {
+            var fDatas = await _getForecastValues.GetForecastValuesByColumnName(headerName);
+            var data = await _getData.ActualValues(headerName);
 
-    //         };
+            var algoData = fDatas
+            .Where(x => x.AlgoType.Trim().ToLower() == AlgoType.Trim().ToLower())
+            .Select(d => new ALgoOutput
+            {
+                ForecastValues = d.ForecastValues.ToList(),
+                AlgoType = d.AlgoType
+            });
 
-    //     }
-    // }
+            if (!algoData.Any() || algoData == null)
+                return NotFound("No Data Found!");
+
+            var seasonLength = fDatas
+            .Where(x => x.AlgoType.Trim().ToLower() == "gas" && x.ColumnName.Trim().ToLower() == headerName.Trim().ToLower())
+            .Select(d => d.SeasonLength)
+            .FirstOrDefault();
+
+            var errorParams = new ErrorParams
+            {
+                SeasonLength = seasonLength,
+                ActualValues = data.Values.ToList(),
+                ForecastValues = algoData.SelectMany(x => x.ForecastValues).ToList()
+            };
+
+            var error = _calcError.EvaluateAlgoErrors(errorParams);
+
+            return Ok(error);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Something went wrong {ex.Message}");
+        }
+    }
 }

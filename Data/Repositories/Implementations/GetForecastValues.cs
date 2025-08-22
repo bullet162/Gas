@@ -1,6 +1,7 @@
 using ForecastingGas.Data;
 using ForecastingGas.Data.Repositories.Interfaces;
 using ForecastingGas.Dto.Requests;
+using ForecastingGas.Dto.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace ForecastingGas.Repositories.Implementations;
@@ -23,7 +24,8 @@ public class GetForecastValues : IGetForecastValues
             AlgoType = x.AlgoType,
             ColumnName = x.ColumnName,
             Id = x.Id,
-            DateForecasted = x.ForecastDate
+            DateForecasted = x.ForecastDate,
+            SeasonLength = x.SeasonLength
         })
         .OrderByDescending(x => x.DateForecasted)
         .ThenBy(x => x.Id)
@@ -33,20 +35,27 @@ public class GetForecastValues : IGetForecastValues
         return result;
     }
 
-    public async Task<(List<decimal> Forecast, string ColumnName)> GetForecastValuesById(int id)
+    public async Task<List<ALgoOutput>> GetForecastValuesByColumnName(string columnName)
     {
-        var result = await _DBContext.GetForecastValues
-        .Where(x => x.ForecastDescriptionID == id)
-        .OrderBy(x => x.Id)
-        .Select(x => x.ForecastValue)
-        .ToListAsync();
+        var flatResult = await _DBContext.GetForecastValues
+            .Where(x => x.GetForecastDescription.ColumnName == columnName)
+            .GroupBy(x => new
+            {
+                x.ForecastDescriptionID,
+                x.GetForecastDescription.AlgoType,
+                x.GetForecastDescription.Id,
+                x.GetForecastDescription.TotalCount
+            })
+            .Select(g => new ALgoOutput
+            {
+                Id = g.Key.ForecastDescriptionID,
+                AlgoType = g.Key.AlgoType,
+                ForecastValues = g.Select(f => f.ForecastValue).ToList(),
+                TotalCount = g.Key.TotalCount
+            })
+            .ToListAsync();
 
-        var columnName = await _DBContext.GetForecastDescriptions
-            .Where(d => d.Id == id)
-            .Select(d => d.ColumnName)
-            .FirstOrDefaultAsync();
-
-        return new(result, columnName ?? string.Empty);
+        return flatResult;
     }
 
 }

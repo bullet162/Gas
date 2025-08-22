@@ -62,7 +62,11 @@ public class GasForecast : ControllerBase
                 AlgoType = result.AlgoType,
                 ColumnName = gasParameters.ColumnName,
                 TotalCount = result.TotalCount,
-                ForecastValues = result.ForecastValues
+                ForecastValues = result.ForecastValues,
+                LevelValues = result.LevelValues,
+                TrendValues = result.TrendValues,
+                SeasonalValues = result.SeasonalValues,
+                SeasonLength = result.SeasonLength
             };
 
             await _saveData.SaveDatas(saveResult);

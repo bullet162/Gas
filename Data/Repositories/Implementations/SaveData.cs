@@ -17,7 +17,6 @@ public class SaveData : ISaveData
     //save forecast
     public async Task<bool> SaveDatas(ALgoOutput output)
     {
-
         var result = new ForecastDescription
         {
             AlgoType = output.AlgoType,
@@ -26,7 +25,11 @@ public class SaveData : ISaveData
             GetForecastValues = output.ForecastValues.Select(x => new ForecastValues
             {
                 ForecastValue = x
-            }).ToList()
+            }).ToList(),
+            SeasonalValues = output.SeasonalValues,
+            TrendValues = output.TrendValues,
+            LevelValues = output.LevelValues,
+            SeasonLength = output.SeasonLength
         };
 
         if (result == null)

@@ -2,6 +2,7 @@ namespace ForecastingGas.Dto.Responses;
 
 public class ALgoOutput
 {
+    public int Id { get; set; } = new();
     public List<decimal> ForecastValues { get; set; } = new();
     public List<decimal> ActualValues { get; set; } = new();
     public string ColumnName { get; set; } = string.Empty;

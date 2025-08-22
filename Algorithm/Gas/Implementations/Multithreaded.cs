@@ -76,14 +76,13 @@ public class MTGas : IMtGas
                 Alpha = hwesParams.Alpha,
                 Beta = hwesParams.Beta,
                 Gamma = hwesParams.Gamma,
-                SeasonLength = Math.Min(hwesParams.SeasonLength, windowedData.Count / 2),
+                SeasonLength = Math.Max(2, Math.Min(hwesParams.SeasonLength, windowedData.Count / 2)),
                 ForecasHorizon = hwesParams.ForecasHorizon,
                 ForecastValues = new List<decimal>(),
                 SeasonalValues = new List<decimal>(),
                 LevelValues = new List<decimal>(),
                 TrendValues = new List<decimal>()
             };
-            hwesParams.SeasonLength = newHwesParams.SeasonLength;
 
             var newSesParams = new SesParams
             {
@@ -123,20 +122,14 @@ public class MTGas : IMtGas
 
             if (end == windowSize)
             {
-                // Initial iteration: add all forecast values
                 gasForecast.AddRange(forecast);
-
-                // Align HWES components with full forecast
                 seasonalValues.AddRange(forecastHwes.SeasonalValues);
                 trendValues.AddRange(forecastHwes.TrendValues);
                 levelValues.AddRange(forecastHwes.LevelValues);
             }
             else if (forecast.Any())
             {
-                // Subsequent iterations: only add last forecast point
                 gasForecast.Add(forecast.Last());
-
-                // Add corresponding last component from HWES
                 if (forecastHwes.SeasonalValues.Any())
                     seasonalValues.Add(forecastHwes.SeasonalValues.Last());
                 if (forecastHwes.TrendValues.Any())

@@ -32,7 +32,7 @@ public class Data : IGetData
         return result;
     }
 
-    //Get ColumnName and ActualValues by id
+    //Get ColumnName and ActualValues by columnName
     public async Task<(List<decimal> Values, string ColumnName)> ActualValues(string columnName)
     {
 

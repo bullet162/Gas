@@ -33,19 +33,19 @@ public class ReadFController : ControllerBase
     }
 
     [HttpGet("getFActualValues")]
-    public async Task<IActionResult> GetFActualValues([FromQuery] int Id)
+    public async Task<IActionResult> GetFActualValues([FromQuery] string columnName)
     {
         try
         {
-            if (Id <= 0)
-                return BadRequest("Invalid Id provided.");
+            if (columnName == null)
+                return BadRequest("Invalid column name provided.");
 
-            var result = await _get.GetForecastValuesById(Id);
+            var result = await _get.GetForecastValuesByColumnName(columnName);
 
-            if (result.Forecast.Count == 0)
-                return NotFound("No forecast values found for the requested Id.");
-
-            return Ok(result);
+            if (result == null || result.Count == 0)
+                return NotFound("No records found!");
+            else
+                return Ok(result);
         }
         catch (Exception ex)
         {
