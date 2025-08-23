@@ -7,15 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers;
 
 [ApiController]
-[Route("api/calcError")]
-public class CalcError : ControllerBase
+[Route("api/calculateError")]
+public class CalculateError : ControllerBase
 {
     private readonly IGetData _getData;
     private ISaveData _saveData;
     private IError _calcError;
     private readonly IGetForecastValues _getForecastValues;
 
-    public CalcError(IGetData getData, ISaveData saveData, IError calcError, IGetForecastValues getForecastValues)
+    public CalculateError(IGetData getData, ISaveData saveData, IError calcError, IGetForecastValues getForecastValues)
     {
         _getData = getData;
         _saveData = saveData;

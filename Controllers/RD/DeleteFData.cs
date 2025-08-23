@@ -4,15 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers.CRUD;
 
 [ApiController]
-[Route("api/DeleteForecastData")]
-public class DeleteFDataController : ControllerBase
+[Route("api/Delete")]
+public class DeleteForecastValues : ControllerBase
 {
     private IDeleteForecast _delete;
-    public DeleteFDataController(IDeleteForecast delete)
+    public DeleteForecastValues(IDeleteForecast delete)
     {
         _delete = delete;
     }
-    [HttpDelete("deleteForecastById")]
+    [HttpDelete("ForecastValuesById")]
     public async Task<IActionResult> DeleteForecastById([FromQuery] int id)
     {
         try
@@ -33,7 +33,7 @@ public class DeleteFDataController : ControllerBase
         }
     }
 
-    [HttpDelete("deleteAllForecasts")]
+    [HttpDelete("AllForecasts")]
     public async Task<IActionResult> DeleteAllForecasts()
     {
         try

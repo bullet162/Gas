@@ -8,14 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers;
 
 [ApiController]
-[Route("api/sesForecast")]
-public class ForecastSes : ControllerBase
+[Route("api/Forecast")]
+public class SesForecast : ControllerBase
 {
     private readonly IGetData _get;
     private ISes _ses;
     private ISaveData _save;
     private ISearch _search;
-    public ForecastSes(IGetData getData, ISes ses, ISaveData save, ISearch search)
+    public SesForecast(IGetData getData, ISes ses, ISaveData save, ISearch search)
     {
         _get = getData;
         _ses = ses;

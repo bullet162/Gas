@@ -8,11 +8,11 @@ namespace ForecastingGas.Controllers;
 
 [ApiController]
 [Route("api/upload")]
-public class File : ControllerBase
+public class UploadFile : ControllerBase
 {
     private IUploadCsv _csv;
     private ISaveData _save;
-    public File(IUploadCsv upload, ISaveData save)
+    public UploadFile(IUploadCsv upload, ISaveData save)
     {
         _csv = upload;
         _save = save;

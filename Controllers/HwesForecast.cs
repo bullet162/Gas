@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers;
 
 [ApiController]
-[Route("api/hwesForecast")]
+[Route("api/Forecast")]
 public class HwesForecast : ControllerBase
 {
     private readonly IGetData _get;

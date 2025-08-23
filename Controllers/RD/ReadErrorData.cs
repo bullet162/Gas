@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers.CRUD;
 
 [ApiController]
-[Route("api/ReadErrorData")]
+[Route("api/Read")]
 public class ReadErrorData : ControllerBase
 {
     private readonly IGetError _getError;
@@ -15,7 +15,7 @@ public class ReadErrorData : ControllerBase
         _getError = error;
     }
 
-    [HttpGet("getErrorData")]
+    [HttpGet("ErrorData")]
     public async Task<IActionResult> GetErrorData([FromQuery] int Id)
     {
         try

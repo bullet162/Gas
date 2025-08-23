@@ -4,17 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace ForecastingGas.Controllers.CRUD;
 
 [ApiController]
-[Route("api/ReadForecastData")]
-public class ReadFController : ControllerBase
+[Route("api/Read")]
+public class ReadForecast : ControllerBase
 {
     private readonly IGetForecastValues _get;
 
-    public ReadFController(IGetForecastValues get)
+    public ReadForecast(IGetForecastValues get)
     {
         _get = get;
     }
 
-    [HttpGet("getFColumnNamesAndId")]
+    [HttpGet("ForecastValuesDescriptions")]
     public async Task<IActionResult> GetFColumnNamesAndId()
     {
         try
@@ -32,7 +32,7 @@ public class ReadFController : ControllerBase
         }
     }
 
-    [HttpGet("getForecastValues")]
+    [HttpGet("ForecastValuesByColumnName")]
     public async Task<IActionResult> GetFActualValues([FromQuery] string columnName)
     {
         try
