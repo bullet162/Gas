@@ -11,12 +11,14 @@ public class HwesParams
     public int ForecasHorizon { get; set; } = new();
     public int SeasonLength { get; set; } = new();
 
-    // [MinLength(64, ErrorMessage = "Actual Values must have atleast 64 values for Hwes to train!")]
     public List<decimal> ActualValues { get; set; } = new();
     public List<decimal> ForecastValues { get; set; } = new();
     public List<decimal> SeasonalValues { get; set; } = new();
     public List<decimal> TrendValues { get; set; } = new();
     public List<decimal> LevelValues { get; set; } = new();
+    public List<decimal> PredictionValues { get; set; } = new();
+
+    public string AddPrediction { get; set; } = string.Empty;
 
 }
 
@@ -29,4 +31,6 @@ public class InputHwesController
     public int ForecasHorizon { get; set; } = new();
 
     public int SeasonLength { get; set; } = new();
+    public string AddPrediction { get; set; } = string.Empty;
+
 }

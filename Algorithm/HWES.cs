@@ -11,7 +11,7 @@ namespace ForecastingGas.Algorithm.Hwes
     {
         private int _seasonLength;
 
-        public ALgoOutput TrainForecast(HwesParams hwesParams)
+        public ALgoOutput TrainForecast(HwesParams hwesParams, string addPrediction)
         {
             List<decimal> _level = hwesParams.LevelValues;
             List<decimal> _trend = hwesParams.TrendValues;
@@ -78,11 +78,11 @@ namespace ForecastingGas.Algorithm.Hwes
                 _seasonal.Add(newSeasonal);
 
                 if (i >= _seasonLength + 2)
-                {
                     hwesParams.ForecastValues.Add(_level[i] + _trend[i] + _seasonal[seasonIndex]);
-                }
-
             }
+
+            if (addPrediction.Trim().ToLower() == "yes")
+                hwesParams.PredictionValues = GenerateForecasts(hwesParams);
 
             var results = new ALgoOutput
             {
@@ -93,7 +93,8 @@ namespace ForecastingGas.Algorithm.Hwes
                 LevelValues = _level,
                 TrendValues = _trend,
                 SeasonalValues = _seasonal,
-                SeasonLength = _seasonLength
+                SeasonLength = _seasonLength,
+                PredictionValues = hwesParams.PredictionValues
             };
 
             return results;
@@ -106,15 +107,14 @@ namespace ForecastingGas.Algorithm.Hwes
             List<decimal> _seasonal = hwesParams.SeasonalValues;
 
             var horizon = hwesParams.ForecasHorizon;
-            hwesParams.ForecastValues = new();
-            var forecasts = hwesParams.ForecastValues;
+            var forecasts = hwesParams.PredictionValues;
             for (int i = 1; i <= horizon; i++)
             {
                 if (_seasonal.Count < _seasonLength || _level.Count == 0 || _trend.Count == 0)
                     throw new InvalidOperationException("Model must be trained before generating forecasts.");
 
                 int seasonIndex = (_seasonal.Count - _seasonLength + (i % _seasonLength)) % _seasonLength;
-                hwesParams.ForecastValues.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
+                forecasts.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
             }
 
             return forecasts;

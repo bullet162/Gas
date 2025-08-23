@@ -7,10 +7,6 @@ using ForecastingGas.Error_Metrics.Interfaces;
 
 namespace ForecastingGas.Algorithm.Gas.Implementations;
 
-/*
-SES: Starts forecasting right at index 0
-HWES: Starts forecasting right at index seasonLength + 2
-*/
 
 public class MTGas : IMtGas
 {
@@ -31,15 +27,15 @@ public class MTGas : IMtGas
     public List<decimal> CalculateSes(SesParams ses)
     {
         var alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
-        var results = _ses.SesForecast(alpha, ses.ActualValues);
+        var results = _ses.SesForecast(alpha, ses.ActualValues, ses.ForecastHorizon);
 
         return results.ForecastValues;
     }
 
     public ALgoOutput CalculateHwes(HwesParams hwesParams)
     {
-
-        var results = _hwes.TrainForecast(hwesParams);
+        const string no = "no";
+        var results = _hwes.TrainForecast(hwesParams, no);
 
         return new ALgoOutput
         {
@@ -56,6 +52,7 @@ public class MTGas : IMtGas
         List<decimal> seasonalValues = new();
         List<decimal> trendValues = new();
         List<decimal> levelValues = new();
+        List<decimal> GasPrediction = new();
         const string model = "GAS";
 
         int windowSize = hwesParams.ActualValues.Count / 2;
@@ -89,9 +86,10 @@ public class MTGas : IMtGas
                 TrendValues = new List<decimal>()
             };
 
+            var copyData = windowedData.ToList();
             var newSesParams = new SesParams
             {
-                ActualValues = windowedData,
+                ActualValues = copyData,
                 Alpha = new decimal()
             };
 
@@ -141,7 +139,26 @@ public class MTGas : IMtGas
                 if (forecastHwes.LevelValues.Any())
                     levelValues.Add(forecastHwes.LevelValues.Last());
             }
+        }
 
+        if (gasRequest.AddPrediction.Trim().ToLower() == "yes")
+        {
+            hwesParams.ForecasHorizon = hwesParams.ForecasHorizon <= 0 ? 1
+            : hwesParams.ForecasHorizon;
+
+            var finalHwesParams = new HwesParams
+            {
+                SeasonLength = hwesParams.SeasonLength,
+                ForecasHorizon = hwesParams.ForecasHorizon,
+                LevelValues = hwesParams.LevelValues,
+                TrendValues = hwesParams.TrendValues,
+                SeasonalValues = hwesParams.SeasonalValues,
+                PredictionValues = hwesParams.PredictionValues
+            };
+
+            GasPrediction = _hwes.GenerateForecasts(finalHwesParams);
+
+            gasForecast.AddRange(GasPrediction);
         }
 
         return new ALgoOutput
@@ -154,7 +171,8 @@ public class MTGas : IMtGas
             LevelValues = levelValues,
             TrendValues = trendValues,
             SeasonalValues = seasonalValues,
-            SeasonLength = hwesParams.SeasonLength
+            SeasonLength = hwesParams.SeasonLength,
+            PredictionValues = GasPrediction
         };
 
     }

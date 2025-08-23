@@ -33,14 +33,15 @@ public class SesForecast : ControllerBase
 
             var alpha = _search.GenerateOptimalAlpha(data.Values);
 
-            var result = _ses.SesForecast(alpha, data.Values);
+            var result = _ses.SesForecast(alpha, data.Values, ses.ForecastHorizon);
 
             var output = new ALgoOutput
             {
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
                 TotalCount = result.TotalCount,
-                ForecastValues = result.ForecastValues
+                ForecastValues = result.ForecastValues,
+                PredictionValues = result.PredictionValues
             };
 
             await _save.SaveDatas(output);

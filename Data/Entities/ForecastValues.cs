@@ -13,6 +13,7 @@ public class ForecastDescription
     public DateTime ForecastDate { get; set; } = DateTime.UtcNow;
     public int TotalCount { get; set; }
     public List<ForecastValues> GetForecastValues { get; set; } = null!;
+    public List<PredictionValues> GetPredictionValues { get; set; } = null!;
 
     [Column(TypeName = "nvarchar(max)")]
     public List<decimal> LevelValues { get; set; } = new();
@@ -32,6 +33,16 @@ public class ForecastValues
 
     [Column(TypeName = "decimal(18,9)")]
     public decimal ForecastValue { get; set; }
+    public int ForecastDescriptionID { get; set; }
+    public ForecastDescription GetForecastDescription { get; set; } = null!;
+}
+
+public class PredictionValues
+{
+    [Key]
+    public int Id { get; set; }
+
+    public decimal PredictionValue { get; set; }
     public int ForecastDescriptionID { get; set; }
     public ForecastDescription GetForecastDescription { get; set; } = null!;
 }

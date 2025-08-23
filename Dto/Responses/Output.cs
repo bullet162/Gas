@@ -12,6 +12,7 @@ public class ALgoOutput
     public List<decimal> TrendValues { get; set; } = new();
     public List<decimal> SeasonalValues { get; set; } = new();
     public int SeasonLength { get; set; } = new();
+    public List<decimal> PredictionValues = new();
 }
 
 public class RawDataOutput

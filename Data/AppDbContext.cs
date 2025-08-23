@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<ForecastDescription> GetForecastDescriptions { get; set; }
     public DbSet<ForecastValues> GetForecastValues { get; set; }
+    public DbSet<PredictionValues> GetPredictionValues { get; set; }
 
     public DbSet<ErrorValues> GetErrorValues { get; set; }
 
@@ -33,6 +34,11 @@ public class AppDbContext : DbContext
        .HasForeignKey(c => c.ForecastDescriptionID)
        .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<PredictionValues>()
+        .HasOne(p => p.GetForecastDescription)
+        .WithMany(fd => fd.GetPredictionValues)
+        .HasForeignKey(p => p.ForecastDescriptionID)
+        .OnDelete(DeleteBehavior.Cascade);
 
     }
 }

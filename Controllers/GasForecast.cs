@@ -31,12 +31,6 @@ public class GasForecast : ControllerBase
             if (data.Values == null || data.Values.Count == 0)
                 return BadRequest("No actual values found for the requested Id.");
 
-            // var sesParameters = new SesParams
-            // {
-            //     ActualValues = data.Values,
-            //     Alpha = new decimal()
-            // };
-
             var hwesParameters = new HwesParams
             {
                 ActualValues = data.Values,
@@ -48,12 +42,15 @@ public class GasForecast : ControllerBase
                 LevelValues = new List<decimal>(),
                 TrendValues = new List<decimal>(),
                 SeasonalValues = new List<decimal>(),
-                SeasonLength = new int()
+                SeasonLength = new int(),
+                PredictionValues = new List<decimal>(),
+                AddPrediction = "no"
             };
 
             var gasParameters = new GasRequest
             {
-                ColumnName = data.ColumnName
+                ColumnName = data.ColumnName,
+                AddPrediction = input.AddPrediction
             };
 
             var result = _gasForecastAlgorithm.ApplyMtGas(hwesParameters, gasParameters);
@@ -67,7 +64,8 @@ public class GasForecast : ControllerBase
                 LevelValues = result.LevelValues,
                 TrendValues = result.TrendValues,
                 SeasonalValues = result.SeasonalValues,
-                SeasonLength = result.SeasonLength
+                SeasonLength = result.SeasonLength,
+                PredictionValues = result.PredictionValues
             };
 
             await _saveData.SaveDatas(saveResult);

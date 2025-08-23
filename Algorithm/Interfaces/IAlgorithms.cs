@@ -5,7 +5,7 @@ namespace ForecastingGas.Algorithm.Interfaces;
 
 public interface ISes
 {
-    ALgoOutput SesForecast(decimal alphA, List<decimal> datA);
+    ALgoOutput SesForecast(decimal alphA, List<decimal> datA, int forecastHorizon);
 }
 
 public interface ISearch
@@ -21,7 +21,7 @@ public interface ISearch
 
 public interface IHwes
 {
-    ALgoOutput TrainForecast(HwesParams hwesParams);
+    ALgoOutput TrainForecast(HwesParams hwesParams, string addPrediction);
     List<decimal> GenerateForecasts(HwesParams hwesParams);
 }
 public interface IMa

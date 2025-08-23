@@ -22,14 +22,20 @@ public class SaveData : ISaveData
             AlgoType = output.AlgoType,
             ColumnName = output.ColumnName,
             TotalCount = output.TotalCount,
-            GetForecastValues = output.ForecastValues.Select(x => new ForecastValues
+            GetForecastValues = output.ForecastValues
+            .Select(x => new ForecastValues
             {
                 ForecastValue = x
             }).ToList(),
             SeasonalValues = output.SeasonalValues,
             TrendValues = output.TrendValues,
             LevelValues = output.LevelValues,
-            SeasonLength = output.SeasonLength
+            SeasonLength = output.SeasonLength,
+            GetPredictionValues = output.PredictionValues
+            .Select(x => new PredictionValues
+            {
+                PredictionValue = x
+            }).ToList()
         };
 
         if (result == null)

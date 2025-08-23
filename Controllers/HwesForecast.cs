@@ -42,7 +42,7 @@ public class HwesForecast : ControllerBase
                 ForecastValues = new List<decimal>(),
                 ForecasHorizon = hwesParams.ForecasHorizon
             };
-            var result = _hwes.TrainForecast(parametersHwes);
+            var result = _hwes.TrainForecast(parametersHwes, hwesParams.AddPrediction);
             var seasonCount = result.SeasonalValues.Count;
             var trendCount = result.TrendValues.Count;
             var levelCount = result.LevelValues.Count;
@@ -56,7 +56,8 @@ public class HwesForecast : ControllerBase
                 LevelValues = result.LevelValues,
                 TrendValues = result.TrendValues,
                 SeasonalValues = result.SeasonalValues,
-                SeasonLength = result.SeasonLength
+                SeasonLength = result.SeasonLength,
+                PredictionValues = result.PredictionValues
             };
 
             await _save.SaveDatas(saveResult);
