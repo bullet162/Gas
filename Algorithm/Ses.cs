@@ -1,13 +1,22 @@
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Dto.Responses;
 using ForecastingGas.Algorithm.Interfaces;
+using ForecastingGas.Utils.Interfaces;
 
 namespace ForecastingGas.Algorithm.Ses;
 
 public class ForecastSes : ISes
 {
+    private IWatch _watch;
+    public ForecastSes(IWatch watch)
+    {
+        _watch = watch;
+    }
+
     public ALgoOutput SesForecast(decimal alphA, List<decimal> datA, int forecastHorizon)
     {
+        _watch.StartWatch();
+
         if (datA == null || datA.Count == 0)
             throw new ArgumentNullException("Actual Values cannot be Null!");
 
@@ -34,14 +43,16 @@ public class ForecastSes : ISes
         }
 
         int TotalCount = output.ForecastValues.Count;
-
+        string timeComputed = _watch.StopWatch();
         var result = new ALgoOutput
         {
             ForecastValues = output.ForecastValues,
             ActualValues = data,
             AlgoType = Name,
             TotalCount = TotalCount,
-            PredictionValues = output.PredictionValues
+            PredictionValues = output.PredictionValues,
+            TimeComputed = timeComputed
+
         };
 
         return result;

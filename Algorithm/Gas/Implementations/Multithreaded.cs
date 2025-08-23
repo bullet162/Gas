@@ -4,6 +4,7 @@ using ForecastingGas.Data.Entities;
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Dto.Responses;
 using ForecastingGas.Error_Metrics.Interfaces;
+using ForecastingGas.Utils.Interfaces;
 
 namespace ForecastingGas.Algorithm.Gas.Implementations;
 
@@ -15,13 +16,15 @@ public class MTGas : IMtGas
     private IError _error;
     private IModel _model;
     private ISearch _search;
-    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search)
+    private IWatch _watch;
+    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search, IWatch watch)
     {
         _ses = ses;
         _hwes = hwes;
         _error = error;
         _model = model;
         _search = search;
+        _watch = watch;
     }
 
     public List<decimal> CalculateSes(SesParams ses)
@@ -48,6 +51,7 @@ public class MTGas : IMtGas
 
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
+        _watch.StartWatch();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
         List<decimal> trendValues = new();
@@ -161,6 +165,7 @@ public class MTGas : IMtGas
             gasForecast.AddRange(GasPrediction);
         }
 
+        var timeComputed = _watch.StopWatch();
         return new ALgoOutput
         {
             ForecastValues = gasForecast,
@@ -172,7 +177,8 @@ public class MTGas : IMtGas
             TrendValues = trendValues,
             SeasonalValues = seasonalValues,
             SeasonLength = hwesParams.SeasonLength,
-            PredictionValues = GasPrediction
+            PredictionValues = GasPrediction,
+            TimeComputed = timeComputed
         };
 
     }

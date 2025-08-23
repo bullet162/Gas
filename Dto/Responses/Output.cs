@@ -13,6 +13,7 @@ public class ALgoOutput
     public List<decimal> SeasonalValues { get; set; } = new();
     public int SeasonLength { get; set; } = new();
     public List<decimal> PredictionValues = new();
+    public string TimeComputed { get; set; } = string.Empty;
 }
 
 public class RawDataOutput

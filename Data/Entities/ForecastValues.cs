@@ -25,6 +25,7 @@ public class ForecastDescription
     public List<decimal> SeasonalValues { get; set; } = new();
 
     public int SeasonLength { get; set; } = new();
+    public string TimeComputed { get; set; } = string.Empty;
 }
 public class ForecastValues
 {

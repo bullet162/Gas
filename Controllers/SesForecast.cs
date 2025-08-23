@@ -41,11 +41,12 @@ public class SesForecast : ControllerBase
                 ColumnName = data.ColumnName,
                 TotalCount = result.TotalCount,
                 ForecastValues = result.ForecastValues,
-                PredictionValues = result.PredictionValues
+                PredictionValues = result.PredictionValues,
+                TimeComputed = result.TimeComputed
             };
 
             await _save.SaveDatas(output);
-            return Ok("Forecasting completed successfully.");
+            return Ok($"Forecasting completed successfully. {result.TimeComputed}");
         }
         catch (Exception ex)
         {

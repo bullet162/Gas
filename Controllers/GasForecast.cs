@@ -65,7 +65,8 @@ public class GasForecast : ControllerBase
                 TrendValues = result.TrendValues,
                 SeasonalValues = result.SeasonalValues,
                 SeasonLength = result.SeasonLength,
-                PredictionValues = result.PredictionValues
+                PredictionValues = result.PredictionValues,
+                TimeComputed = result.TimeComputed
             };
 
             await _saveData.SaveDatas(saveResult);

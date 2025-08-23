@@ -35,7 +35,8 @@ public class SaveData : ISaveData
             .Select(x => new PredictionValues
             {
                 PredictionValue = x
-            }).ToList()
+            }).ToList(),
+            TimeComputed = output.TimeComputed
         };
 
         if (result == null)
