@@ -21,6 +21,9 @@ public class ReadActualValues : ControllerBase
         {
             var result = await _get.GetAllColumnNamesAndId();
 
+            if (result == null || result.Count == 0)
+                return NotFound("No records found.");
+
             return Ok(result);
         }
         catch (Exception ex)
@@ -36,14 +39,10 @@ public class ReadActualValues : ControllerBase
         {
             var result = await _get.ActualValues(columnName);
 
-            if (result.Values.Count == 0 && result.ColumnName == string.Empty)
+            if (result.Values == null || result.Values.Count == 0 && result.ColumnName == string.Empty)
                 return NotFound("No actual values found for the requested Id.");
 
-            return Ok(new
-            {
-                result.ColumnName,
-                result.Values
-            });
+            return Ok(result);
         }
         catch (Exception ex)
         {

@@ -45,12 +45,13 @@ public class UploadFile : ControllerBase
             {
                 ColumnName = result.columnName,
                 TotalCount = result.totalCount,
-                ActualValues = result.actualValues
+                ActualValues = result.actualValues,
+                DateOfEntry = DateTime.Today
             };
 
             await _save.SaveRawData(saveResult);
 
-            return Ok("successfully saved actual values");
+            return Ok(saveResult);
         }
         catch (Exception ex)
         {
