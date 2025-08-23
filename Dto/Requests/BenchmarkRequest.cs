@@ -1,0 +1,7 @@
+namespace ForecastingGas.Dto.Requests;
+
+public class BenchmarkParams
+{
+    public string AlgoType { get; set; } = "";
+    public string ColumnName { get; set; } = "";
+}

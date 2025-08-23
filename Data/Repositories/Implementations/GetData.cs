@@ -16,7 +16,7 @@ public class Data : IGetData
     //Get all ColumnName and id
     public async Task<List<RawDataOutput>> GetAllColumnNamesAndId()
     {
-        var result = await _DbContext.DataDescriptions
+        var result = await _DbContext.GetDataDescriptions
         .Select(x => new RawDataOutput
         {
             Id = x.Id,
@@ -40,7 +40,7 @@ public class Data : IGetData
             throw new ArgumentException("Column name cannot be null or empty.");
 
         var data = await _DbContext.GetActualValues
-            .Where(x => x.GetDataDescription.ColumnName == columnName)
+            .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower())
             .Select(x => x.ActualValue)
             .ToListAsync();
 
@@ -49,7 +49,7 @@ public class Data : IGetData
 
         else
         {
-            var NameofColumn = await _DbContext.DataDescriptions
+            var NameofColumn = await _DbContext.GetDataDescriptions
                 .Where(d => d.ColumnName == columnName)
                 .Select(d => d.ColumnName)
                 .FirstOrDefaultAsync();

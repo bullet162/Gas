@@ -28,3 +28,8 @@ public interface IMa
 {
     List<decimal> MaForecast(List<decimal> actualValues, int window);
 }
+
+public interface ITrainTest
+{
+    (List<decimal> Train, List<decimal> Test) SplitDataTwo(List<decimal> ActualValues);
+}

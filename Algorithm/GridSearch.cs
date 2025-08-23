@@ -22,7 +22,7 @@ public class GridSearch : ISearch
             .AsOrdered()
             .Select(alpha =>
             {
-                var forecast = _ses.SesForecast(alpha, actualValues);
+                var forecast = _ses.SesForecast(alpha, actualValues, 0);
 
                 var error = ComputeRmse(actualValues, forecast.ForecastValues);
 
@@ -46,7 +46,7 @@ public class GridSearch : ISearch
     {
         int startIndex = seasonLength + 2;
         decimal mse = 0;
-        int n = Math.Min(forecast.Count, actual.Count - startIndex); // make sure it fits
+        int n = Math.Min(forecast.Count, actual.Count - startIndex);
 
         for (int i = 0; i < n; i++)
         {
@@ -90,7 +90,7 @@ public class GridSearch : ISearch
                     ForecastValues = new List<decimal>()
                 };
 
-                var forecast = hwes.TrainForecast(hwesParams).ForecastValues;
+                var forecast = hwes.TrainForecast(hwesParams, "no").ForecastValues;
                 decimal mse = ComputeMSE(actualData, forecast, seasonLength);
 
                 bestResult.Add((c.Alpha, c.Beta, c.Gamma, mse));

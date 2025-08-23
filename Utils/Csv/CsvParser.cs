@@ -24,7 +24,9 @@ public class UploadCsv : IUploadCsv
             columnNames = header!
             .Trim()
             .Split(',')
+            .Select(c => c.Trim('"'))
             .ToList();
+
 
         }
 
@@ -38,6 +40,8 @@ public class UploadCsv : IUploadCsv
         if (extensionName != ".csv")
             throw new ArgumentException("File must be a csv.");
 
+        var displayName = $"{fileName} - {selectedColumnName.SColumnName}";
+
         var data = new List<decimal>();
 
         var rawData = new List<string>();
@@ -45,7 +49,7 @@ public class UploadCsv : IUploadCsv
         using (StreamReader reader = new StreamReader(fileUpload.File.OpenReadStream()))
         {
             var headerLine = await reader.ReadLineAsync();
-            var columnNames = headerLine!.Split(',').ToList();
+            var columnNames = headerLine!.Split(',').Select(c => c.Trim('"')).ToList();
 
             int headerIndex = columnNames.IndexOf(selectedColumnName.SColumnName);
             if (headerIndex == -1)
@@ -66,7 +70,7 @@ public class UploadCsv : IUploadCsv
                 }
             }
 
-            return (data, selectedColumnName.SColumnName, data.Count);
+            return (data, displayName, data.Count);
         }
     }
 }

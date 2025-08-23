@@ -54,7 +54,7 @@ public class MTGas : IMtGas
         List<decimal> levelValues = new();
         List<decimal> GasPrediction = new();
         const string model = "GAS";
-
+        var newHwesParams = new HwesParams();
         int windowSize = hwesParams.ActualValues.Count / 2;
         hwesParams.SeasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
@@ -70,9 +70,9 @@ public class MTGas : IMtGas
                 .Take(windowSize)
                 .ToList();
 
-            var optimalParams = _search.GridSearchHWES(_hwes, windowedData, hwesParams.SeasonLength, steps: 10);
+            var optimalParams = _search.GridSearchHWES(_hwes, windowedData, hwesParams.SeasonLength);
 
-            var newHwesParams = new HwesParams
+            newHwesParams = new HwesParams
             {
                 ActualValues = windowedData,
                 Alpha = optimalParams.alpha,
@@ -150,13 +150,13 @@ public class MTGas : IMtGas
             {
                 SeasonLength = hwesParams.SeasonLength,
                 ForecasHorizon = hwesParams.ForecasHorizon,
-                LevelValues = hwesParams.LevelValues,
-                TrendValues = hwesParams.TrendValues,
-                SeasonalValues = hwesParams.SeasonalValues,
+                LevelValues = levelValues,
+                TrendValues = trendValues,
+                SeasonalValues = seasonalValues,
                 PredictionValues = hwesParams.PredictionValues
             };
 
-            GasPrediction = _hwes.GenerateForecasts(finalHwesParams);
+            GasPrediction = _hwes.GenerateForecasts(newHwesParams);
 
             gasForecast.AddRange(GasPrediction);
         }

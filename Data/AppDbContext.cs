@@ -9,7 +9,7 @@ public class AppDbContext : DbContext
 {
 
     public DbSet<ActualValues> GetActualValues { get; set; }
-    public DbSet<DataDescription> DataDescriptions { get; set; }
+    public DbSet<DataDescription> GetDataDescriptions { get; set; }
 
     public DbSet<ForecastDescription> GetForecastDescriptions { get; set; }
     public DbSet<ForecastValues> GetForecastValues { get; set; }
