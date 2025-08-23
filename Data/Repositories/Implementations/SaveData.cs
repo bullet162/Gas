@@ -69,12 +69,12 @@ public class SaveData : ISaveData
         }
     }
 
-    public async Task<bool> SaveErrorData(ErrorOutput output, string algoType, string columnName)
+    public async Task<bool> SaveErrorData(ErrorOutput output)
     {
         var results = new ErrorValues
         {
-            ColumnName = columnName,
-            AlgoType = algoType,
+            ColumnName = output.ColumnName,
+            AlgoType = output.AlgoType,
             RMSE = output.RMSE,
             MSE = output.MSE,
             MAE = output.MAE,

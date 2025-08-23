@@ -34,6 +34,7 @@ builder.Services.AddScoped<IModel, WeightedForecast>();
 builder.Services.AddScoped<IGetForecastValues, GetForecastValues>();
 builder.Services.AddScoped<IDeleteForecast, DeleteForecast>();
 builder.Services.AddScoped<ISearch, GridSearch>();
+builder.Services.AddScoped<IGetError, GetError>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

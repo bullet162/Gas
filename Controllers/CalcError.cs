@@ -64,11 +64,19 @@ public class CalcError : ControllerBase
 
             var error = _calcError.EvaluateAlgoErrors(errorParams);
 
-            return Ok(new
+            var result = new ErrorOutput
             {
-                seasonLength,
-                error
-            });
+                ColumnName = headerName,
+                AlgoType = AlgoType,
+                RMSE = error.RMSE,
+                MAPE = error.MAPE,
+                MSE = error.MSE,
+                MAE = error.MAE
+            };
+
+            await _saveData.SaveErrorData(result);
+
+            return Ok(error);
         }
         catch (Exception ex)
         {

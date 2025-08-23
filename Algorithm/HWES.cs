@@ -9,7 +9,6 @@ namespace ForecastingGas.Algorithm.Hwes
 {
     public class AdditiveHwes : IHwes
     {
-
         private int _seasonLength;
 
         public ALgoOutput TrainForecast(HwesParams hwesParams)

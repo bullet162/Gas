@@ -25,6 +25,8 @@ public class RawDataOutput
 
 public class ErrorOutput
 {
+    public string ColumnName { get; set; } = string.Empty;
+    public string AlgoType { get; set; } = string.Empty;
     public double RMSE { get; set; } = new();
     public decimal MAE { get; set; } = new();
     public decimal MAPE { get; set; } = new();
