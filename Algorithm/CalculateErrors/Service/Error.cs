@@ -67,7 +67,7 @@ public class Error : IError
         List<decimal> squaredErrors = new();
         List<decimal> PabsError = new();
 
-        var count = errorParams.ForecastValues.Count;
+        var count = Math.Min(errorParams.ActualValues.Count, errorParams.ForecastValues.Count);
 
         for (int i = 0; i < count; i++)
         {

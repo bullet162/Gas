@@ -37,8 +37,7 @@ public class MTGas : IMtGas
 
     public ALgoOutput CalculateHwes(HwesParams hwesParams)
     {
-        const string no = "no";
-        var results = _hwes.TrainForecast(hwesParams, no);
+        var results = _hwes.TrainForecast(hwesParams);
 
         return new ALgoOutput
         {
@@ -74,7 +73,7 @@ public class MTGas : IMtGas
                 .Take(windowSize)
                 .ToList();
 
-            var optimalParams = _search.GridSearchHWES(_hwes, windowedData, hwesParams.SeasonLength);
+            var optimalParams = _search.GridSearchHWES(windowedData, hwesParams.SeasonLength);
 
             newHwesParams = new HwesParams
             {

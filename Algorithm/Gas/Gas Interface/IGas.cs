@@ -9,6 +9,11 @@ public interface IMtGas
 
 }
 
+public interface IEnhanceGAS
+{
+    ALgoOutput ApplyAdaptiveGas
+     (List<decimal> actualValues, int seasonalityLength, int forecastHorizon, int localWindow, string addPrediction);
+}
 public interface IModel
 {
     (decimal weightSes, decimal weightHwes) CalculateWeights(decimal mseSes, decimal mseHwes);

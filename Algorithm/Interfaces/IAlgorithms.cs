@@ -12,7 +12,6 @@ public interface ISearch
 {
     decimal GenerateOptimalAlpha(List<decimal> actualValues);
     (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
-    IHwes hwes,
     List<decimal> actualData,
     int seasonLength,
     int steps = 10);
@@ -21,7 +20,7 @@ public interface ISearch
 
 public interface IHwes
 {
-    ALgoOutput TrainForecast(HwesParams hwesParams, string addPrediction);
+    ALgoOutput TrainForecast(HwesParams hwesParams);
     List<decimal> GenerateForecasts(HwesParams hwesParams);
 }
 public interface IMa
@@ -32,4 +31,15 @@ public interface IMa
 public interface ITrainTest
 {
     (List<decimal> Train, List<decimal> Test) SplitDataTwo(List<decimal> ActualValues);
+}
+
+public interface IProcessing
+{
+    List<decimal> LogTransformation(List<decimal> ActualValues);
+    List<decimal> BackLogTransform(List<decimal> LogValues);
+}
+
+public interface IGAS
+{
+
 }

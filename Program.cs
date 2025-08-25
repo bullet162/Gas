@@ -16,6 +16,7 @@ using ForecastingGas.Algorithm.Gas.Implementations.Utils;
 using ForecastingGas.Repositories.Implementations;
 using ForecastingGas.Algorithm;
 using ForecastingGas.Utils;
+using ForecastingGas.Algorithm.Gas;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,8 @@ builder.Services.AddScoped<IGetError, GetError>();
 builder.Services.AddScoped<ITrainTest, TrainTest>();
 builder.Services.AddScoped<IDeleteData, DeleteData>();
 builder.Services.AddScoped<IWatch, Watch>();
+builder.Services.AddScoped<IProcessing, Processing>();
+builder.Services.AddScoped<IEnhanceGAS, EnhancedGas>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

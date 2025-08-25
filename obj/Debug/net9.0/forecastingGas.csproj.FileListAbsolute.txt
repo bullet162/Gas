@@ -164,3 +164,4 @@ C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\refint\forecas
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\forecastingGas.pdb
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\forecastingGas.genruntimeconfig.cache
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\ref\forecastingGas.dll
+C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\MathNet.Numerics.dll

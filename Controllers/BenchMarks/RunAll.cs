@@ -18,8 +18,10 @@ public class BenchmarkController : Controller
     private IHwes _hwes;
     private IMtGas _gas;
     private IError _error;
+    private IProcessing _process;
+    private IEnhanceGAS _newGAS;
 
-    public BenchmarkController(ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas, IError error)
+    public BenchmarkController(ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas, IError error, IProcessing processing, IEnhanceGAS gAS)
     {
         _TrainTest = trainTest;
         _get = get;
@@ -27,6 +29,8 @@ public class BenchmarkController : Controller
         _hwes = hwes;
         _gas = gas;
         _error = error;
+        _process = processing;
+        _newGAS = gAS;
     }
 
     [HttpPost("forecast")]
@@ -42,9 +46,12 @@ public class BenchmarkController : Controller
             if (data.Values == null || data.Values.Count == 0)
                 return NotFound("No data found with that column name...");
 
-            var ActualValues = _TrainTest.SplitDataTwo(data.Values);
+            List<decimal> LogValues = new();
+            LogValues = _process.LogTransformation(data.Values);
 
-            var seasonLength = (ActualValues.Train.Count / 2) / 2;
+            var ActualValues = _TrainTest.SplitDataTwo(LogValues);
+
+            var seasonLength = ActualValues.Train.Count / 10;
 
             var hwesParams = new HwesParams
             {
@@ -74,16 +81,18 @@ public class BenchmarkController : Controller
                 result = _ses.SesForecast(0.01m, ActualValues.Train, ActualValues.Test.Count);
 
             else if (benchmark.AlgoType.Trim().ToLower() == "hwes")
-                result = _hwes.TrainForecast(hwesParams, "yes");
+                result = _hwes.TrainForecast(hwesParams);
 
-            else if (benchmark.AlgoType.Trim().ToLower() == "gas")
+            else if (benchmark.AlgoType.Trim().ToLower() == "oldgas")
                 result = _gas.ApplyMtGas(hwesParams, gasParams);
+
+            else if (benchmark.AlgoType.Trim().ToLower() == "newgas")
+                result = _newGAS.ApplyAdaptiveGas(ActualValues.Train, seasonLength, ActualValues.Test.Count, ActualValues.Train.Count / 2, "yes");
 
             Console.WriteLine($"Trend: {result.TrendValues.Count}");
             Console.WriteLine($"Level: {result.LevelValues.Count}");
             Console.WriteLine($"Season: {result.SeasonalValues.Count}");
             Console.WriteLine($"Prediction: {result.PredictionValues.Count}");
-            Console.WriteLine($"Test: {ActualValues.Test.Count}");
 
             var errorParams = new ErrorEvaluate
             {
@@ -93,7 +102,11 @@ public class BenchmarkController : Controller
 
             var error = _error.EvaluateAlgoErrors(errorParams);
 
-            return Ok(error);
+            return Ok(new
+            {
+                error,
+                result.TimeComputed
+            });
         }
         catch (Exception ex)
         {

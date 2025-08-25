@@ -31,7 +31,7 @@ public class HwesForecast : ControllerBase
         {
             var data = await _get.ActualValues(hwesParams.ColumnName);
             _watch.StartWatch();
-            var parameters = _search.GridSearchHWES(_hwes, data.Values, hwesParams.SeasonLength);
+            var parameters = _search.GridSearchHWES(data.Values, hwesParams.SeasonLength);
             var parametersHwes = new HwesParams
             {
                 ActualValues = data.Values,
@@ -43,9 +43,10 @@ public class HwesForecast : ControllerBase
                 TrendValues = new List<decimal>(),
                 SeasonalValues = new List<decimal>(),
                 ForecastValues = new List<decimal>(),
-                ForecasHorizon = hwesParams.ForecasHorizon
+                ForecasHorizon = hwesParams.ForecasHorizon,
+                AddPrediction = hwesParams.AddPrediction
             };
-            var result = _hwes.TrainForecast(parametersHwes, hwesParams.AddPrediction);
+            var result = _hwes.TrainForecast(parametersHwes);
             var seasonCount = result.SeasonalValues.Count;
             var trendCount = result.TrendValues.Count;
             var levelCount = result.LevelValues.Count;

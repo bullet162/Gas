@@ -7,10 +7,12 @@ namespace ForecastingGas.Algorithm;
 public class GridSearch : ISearch
 {
     private readonly ISes _ses;
+    private readonly IHwes _hwes;
 
-    public GridSearch(ISes ses)
+    public GridSearch(ISes ses, IHwes hwes)
     {
         _ses = ses;
+        _hwes = hwes;
     }
 
     public decimal GenerateOptimalAlpha(List<decimal> actualValues)
@@ -58,7 +60,6 @@ public class GridSearch : ISearch
 
 
     public (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
-    IHwes hwes,
     List<decimal> actualData,
     int seasonLength,
     int steps = 20)
@@ -87,16 +88,16 @@ public class GridSearch : ISearch
                     Gamma = c.Gamma,
                     SeasonLength = seasonLength,
                     ForecasHorizon = 0,
-                    ForecastValues = new List<decimal>()
+                    ForecastValues = new List<decimal>(),
+                    AddPrediction = "no"
                 };
 
-                var forecast = hwes.TrainForecast(hwesParams, "no").ForecastValues;
+                var forecast = _hwes.TrainForecast(hwesParams).ForecastValues;
                 decimal mse = ComputeMSE(actualData, forecast, seasonLength);
 
                 bestResult.Add((c.Alpha, c.Beta, c.Gamma, mse));
             });
 
-        // Return the candidate with the lowest MSE
         return bestResult.OrderBy(r => r.mse).First();
     }
 

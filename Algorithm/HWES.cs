@@ -4,15 +4,22 @@ using System.Linq;
 using ForecastingGas.Algorithm.Interfaces;
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Dto.Responses;
+using ForecastingGas.Utils.Interfaces;
 
 namespace ForecastingGas.Algorithm.Hwes
 {
     public class AdditiveHwes : IHwes
     {
         private int _seasonLength;
-
-        public ALgoOutput TrainForecast(HwesParams hwesParams, string addPrediction)
+        private IWatch _watch;
+        public AdditiveHwes(IWatch watch)
         {
+            _watch = watch;
+        }
+
+        public ALgoOutput TrainForecast(HwesParams hwesParams)
+        {
+            _watch.StartWatch();
             List<decimal> _level = hwesParams.LevelValues;
             List<decimal> _trend = hwesParams.TrendValues;
             List<decimal> _seasonal = hwesParams.SeasonalValues;
@@ -78,12 +85,12 @@ namespace ForecastingGas.Algorithm.Hwes
                 _seasonal.Add(newSeasonal);
 
                 if (i >= _seasonLength + 2)
-                    hwesParams.ForecastValues.Add(_level[i] + _trend[i] + _seasonal[seasonIndex]);
+                    hwesParams.ForecastValues.Add(_level[i - 1] + _trend[i - 1] + _seasonal[seasonIndex]);
             }
 
-            if (addPrediction.Trim().ToLower() == "yes")
+            if (hwesParams.AddPrediction.Trim().ToLower() == "yes")
                 hwesParams.PredictionValues = GenerateForecasts(hwesParams);
-
+            var time = _watch.StopWatch();
             var results = new ALgoOutput
             {
                 ForecastValues = hwesParams.ForecastValues,
@@ -94,7 +101,8 @@ namespace ForecastingGas.Algorithm.Hwes
                 TrendValues = _trend,
                 SeasonalValues = _seasonal,
                 SeasonLength = _seasonLength,
-                PredictionValues = hwesParams.PredictionValues
+                PredictionValues = hwesParams.PredictionValues,
+                TimeComputed = time
             };
 
             return results;
@@ -115,6 +123,7 @@ namespace ForecastingGas.Algorithm.Hwes
 
                 int seasonIndex = (_seasonal.Count - _seasonLength + (i % _seasonLength)) % _seasonLength;
                 forecasts.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
+                Console.WriteLine($"season: {_seasonal[seasonIndex]}");
             }
 
             return forecasts;

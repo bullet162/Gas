@@ -6,7 +6,7 @@ public class TrainTest : ITrainTest
 {
     public (List<decimal> Train, List<decimal> Test) SplitDataTwo(List<decimal> ActualValues)
     {
-        var trainSize = (int)(ActualValues.Count * 0.90);
+        var trainSize = (int)(ActualValues.Count * 0.75);
         var train = ActualValues.Take(trainSize).ToList();
         var test = ActualValues.Skip(trainSize).ToList();
 
