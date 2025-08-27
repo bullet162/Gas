@@ -42,6 +42,7 @@ builder.Services.AddScoped<IDeleteData, DeleteData>();
 builder.Services.AddScoped<IWatch, Watch>();
 builder.Services.AddScoped<IProcessing, Processing>();
 builder.Services.AddScoped<IEnhanceGAS, EnhancedGas>();
+builder.Services.AddScoped<IBGAS, BGAS>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

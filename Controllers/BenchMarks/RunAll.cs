@@ -20,8 +20,9 @@ public class BenchmarkController : Controller
     private IError _error;
     private IProcessing _process;
     private IEnhanceGAS _newGAS;
+    private IBGAS _BGAS;
 
-    public BenchmarkController(ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas, IError error, IProcessing processing, IEnhanceGAS gAS)
+    public BenchmarkController(ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas, IError error, IProcessing processing, IEnhanceGAS gAS, IBGAS bgas)
     {
         _TrainTest = trainTest;
         _get = get;
@@ -31,6 +32,7 @@ public class BenchmarkController : Controller
         _error = error;
         _process = processing;
         _newGAS = gAS;
+        _BGAS = bgas;
     }
 
     [HttpPost("forecast")]
@@ -84,10 +86,48 @@ public class BenchmarkController : Controller
                 result = _hwes.TrainForecast(hwesParams);
 
             else if (benchmark.AlgoType.Trim().ToLower() == "oldgas")
+            {
                 result = _gas.ApplyMtGas(hwesParams, gasParams);
+
+                var errorParam = new ErrorEvaluate
+                {
+                    ActualValues = ActualValues.Test,
+                    ForecastValues = result.PredictionValues
+                };
+
+                var errorParam2 = new ErrorEvaluate
+                {
+                    ActualValues = ActualValues.Test,
+                    ForecastValues = result.PredictionValues2
+                };
+
+                var error1 = _error.EvaluateAlgoErrors(errorParam);
+                var error2 = _error.EvaluateAlgoErrors(errorParam2);
+                var probSes = result.weightSes * 100;
+                var probHwes = result.weightHwes * 100;
+                string probabilityOfHwesPrediction = $"There is {probHwes}% for the 1st prediction. (see error1)";
+
+                string probabilityOfSesPredictionBlendedHwes = $"There is {probSes}% for the 2nd prediction. (see error2)";
+                return Ok(new
+                {
+                    error1,
+                    probabilityOfHwesPrediction,
+                    error2,
+                    probabilityOfSesPredictionBlendedHwes,
+                    result.TimeComputed
+
+                });
+
+            }
 
             else if (benchmark.AlgoType.Trim().ToLower() == "newgas")
                 result = _newGAS.ApplyAdaptiveGas(ActualValues.Train, seasonLength, ActualValues.Test.Count, ActualValues.Train.Count / 2, "yes");
+
+            else if (benchmark.AlgoType.Trim().ToLower() == "bgas")
+                result = _BGAS.ApplyBGas(hwesParams);
+
+            else
+                return NotFound("404!");
 
             Console.WriteLine($"Trend: {result.TrendValues.Count}");
             Console.WriteLine($"Level: {result.LevelValues.Count}");

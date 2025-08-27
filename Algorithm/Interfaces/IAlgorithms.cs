@@ -11,7 +11,7 @@ public interface ISes
 public interface ISearch
 {
     decimal GenerateOptimalAlpha(List<decimal> actualValues);
-    (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
+    (decimal alpha, decimal beta, decimal gamma, decimal mse, List<decimal> forecast) GridSearchHWES(
     List<decimal> actualData,
     int seasonLength,
     int steps = 10);

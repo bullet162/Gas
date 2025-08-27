@@ -27,12 +27,12 @@ public class MTGas : IMtGas
         _watch = watch;
     }
 
-    public (List<decimal> forecast, decimal alpha) CalculateSes(SesParams ses)
+    public List<decimal> CalculateSes(SesParams ses)
     {
         var alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
         var results = _ses.SesForecast(alpha, ses.ActualValues, ses.ForecastHorizon);
 
-        return new(results.ForecastValues, alpha);
+        return results.ForecastValues;
     }
 
     public ALgoOutput CalculateHwes(HwesParams hwesParams)
@@ -51,15 +51,11 @@ public class MTGas : IMtGas
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
         _watch.StartWatch();
-        decimal weightSes = new();
-        decimal weightHwes = new();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
         List<decimal> trendValues = new();
         List<decimal> levelValues = new();
         List<decimal> GasPrediction = new();
-        List<decimal> GasPrediction2 = new();
-        decimal alphaSes = new();
         const string model = "GAS";
         var newHwesParams = new HwesParams();
         int windowSize = hwesParams.ActualValues.Count / 2;
@@ -100,7 +96,7 @@ public class MTGas : IMtGas
                 Alpha = new decimal()
             };
 
-            (List<decimal> forecast, decimal alpha) forecastSes = default;
+            var forecastSes = new List<decimal>();
             var forecastHwes = new ALgoOutput();
 
             Parallel.Invoke(
@@ -108,12 +104,10 @@ public class MTGas : IMtGas
                 () => forecastHwes = CalculateHwes(newHwesParams)
             );
 
-            alphaSes = forecastSes.alpha;
-
             var sesError = new ErrorParams
             {
                 ActualValues = windowedData,
-                ForecastValues = forecastSes.forecast!,
+                ForecastValues = forecastSes,
                 SeasonLength = hwesParams.SeasonLength
             };
 
@@ -129,9 +123,7 @@ public class MTGas : IMtGas
 
             var weights = _model.CalculateWeights(mseSes, mseHwes);
 
-            weightSes += weights.weightSes;
-            weightHwes += weights.weightHwes;
-            var forecast = _model.GasWeightedForecast(forecastSes.forecast!, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
+            var forecast = _model.GasWeightedForecast(forecastSes, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
 
             if (end == windowSize)
             {
@@ -149,9 +141,7 @@ public class MTGas : IMtGas
                     trendValues.Add(forecastHwes.TrendValues.Last());
                 if (forecastHwes.LevelValues.Any())
                     levelValues.Add(forecastHwes.LevelValues.Last());
-
             }
-
         }
 
         if (gasRequest.AddPrediction.Trim().ToLower() == "yes")
@@ -171,18 +161,7 @@ public class MTGas : IMtGas
 
             GasPrediction = _hwes.GenerateForecasts(newHwesParams);
 
-
-            for (int i = 0; i < hwesParams.ForecasHorizon; i++)
-            {
-                decimal prediction = new();
-                if (i == 0)
-                {
-                    prediction = alphaSes * GasPrediction[i] + (1 - alphaSes) * gasForecast.Last();
-                    GasPrediction2.Add(prediction);
-                }
-                else
-                    GasPrediction2.Add(alphaSes * GasPrediction[i] + (1 - alphaSes) * GasPrediction2[i - 1]);
-            }
+            gasForecast.AddRange(GasPrediction);
         }
 
         var timeComputed = _watch.StopWatch();
@@ -198,10 +177,7 @@ public class MTGas : IMtGas
             SeasonalValues = seasonalValues,
             SeasonLength = hwesParams.SeasonLength,
             PredictionValues = GasPrediction,
-            TimeComputed = timeComputed,
-            PredictionValues2 = GasPrediction2,
-            weightHwes = weightHwes / hwesParams.ActualValues.Count % windowSize,
-            weightSes = weightSes / hwesParams.ActualValues.Count % windowSize
+            TimeComputed = timeComputed
         };
 
     }

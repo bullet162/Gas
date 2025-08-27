@@ -8,8 +8,7 @@ using ForecastingGas.Utils.Interfaces;
 
 namespace ForecastingGas.Algorithm.Gas.Implementations;
 
-
-public class MTGas : IMtGas
+public class BGAS : IBGAS
 {
     private ISes _ses;
     private IHwes _hwes;
@@ -17,7 +16,7 @@ public class MTGas : IMtGas
     private IModel _model;
     private ISearch _search;
     private IWatch _watch;
-    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search, IWatch watch)
+    public BGAS(ISes ses, IHwes hwes, IError error, IModel model, ISearch search, IWatch watch)
     {
         _ses = ses;
         _hwes = hwes;
@@ -27,12 +26,12 @@ public class MTGas : IMtGas
         _watch = watch;
     }
 
-    public (List<decimal> forecast, decimal alpha) CalculateSes(SesParams ses)
+    public List<decimal> CalculateSes(SesParams ses)
     {
         var alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
         var results = _ses.SesForecast(alpha, ses.ActualValues, ses.ForecastHorizon);
 
-        return new(results.ForecastValues, alpha);
+        return results.ForecastValues;
     }
 
     public ALgoOutput CalculateHwes(HwesParams hwesParams)
@@ -48,18 +47,14 @@ public class MTGas : IMtGas
         };
     }
 
-    public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
+    public ALgoOutput ApplyBGas(HwesParams hwesParams)
     {
         _watch.StartWatch();
-        decimal weightSes = new();
-        decimal weightHwes = new();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
         List<decimal> trendValues = new();
         List<decimal> levelValues = new();
         List<decimal> GasPrediction = new();
-        List<decimal> GasPrediction2 = new();
-        decimal alphaSes = new();
         const string model = "GAS";
         var newHwesParams = new HwesParams();
         int windowSize = hwesParams.ActualValues.Count / 2;
@@ -100,7 +95,7 @@ public class MTGas : IMtGas
                 Alpha = new decimal()
             };
 
-            (List<decimal> forecast, decimal alpha) forecastSes = default;
+            var forecastSes = new List<decimal>();
             var forecastHwes = new ALgoOutput();
 
             Parallel.Invoke(
@@ -108,12 +103,10 @@ public class MTGas : IMtGas
                 () => forecastHwes = CalculateHwes(newHwesParams)
             );
 
-            alphaSes = forecastSes.alpha;
-
             var sesError = new ErrorParams
             {
                 ActualValues = windowedData,
-                ForecastValues = forecastSes.forecast!,
+                ForecastValues = forecastSes,
                 SeasonLength = hwesParams.SeasonLength
             };
 
@@ -129,9 +122,7 @@ public class MTGas : IMtGas
 
             var weights = _model.CalculateWeights(mseSes, mseHwes);
 
-            weightSes += weights.weightSes;
-            weightHwes += weights.weightHwes;
-            var forecast = _model.GasWeightedForecast(forecastSes.forecast!, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
+            var forecast = _model.GasWeightedForecast(forecastSes, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
 
             if (end == windowSize)
             {
@@ -149,48 +140,27 @@ public class MTGas : IMtGas
                     trendValues.Add(forecastHwes.TrendValues.Last());
                 if (forecastHwes.LevelValues.Any())
                     levelValues.Add(forecastHwes.LevelValues.Last());
-
             }
-
         }
 
-        if (gasRequest.AddPrediction.Trim().ToLower() == "yes")
+        var tStrength = TrendStrength(levelValues, trendValues, hwesParams.SeasonLength);
+        var sStrength = SeasonalityStrength(hwesParams.ActualValues, levelValues, seasonalValues, trendValues, hwesParams.SeasonLength);
+        var noise = NoiseLevel(sStrength.varNoise, hwesParams.ActualValues, hwesParams.SeasonLength);
+        var currentPhi = (tStrength + (1 - sStrength.sStrength) + (1 - noise)) / 3;
+        var phi = (decimal)Math.Max((double)0.01, (double)Math.Min((double)0.99, (double)currentPhi));
+
+        for (int i = 1; i <= hwesParams.ForecasHorizon; i++)
         {
-            hwesParams.ForecasHorizon = hwesParams.ForecasHorizon <= 0 ? 1
-            : hwesParams.ForecasHorizon;
-
-            var finalHwesParams = new HwesParams
-            {
-                SeasonLength = hwesParams.SeasonLength,
-                ForecasHorizon = hwesParams.ForecasHorizon,
-                LevelValues = levelValues,
-                TrendValues = trendValues,
-                SeasonalValues = seasonalValues,
-                PredictionValues = hwesParams.PredictionValues
-            };
-
-            GasPrediction = _hwes.GenerateForecasts(newHwesParams);
-
-
-            for (int i = 0; i < hwesParams.ForecasHorizon; i++)
-            {
-                decimal prediction = new();
-                if (i == 0)
-                {
-                    prediction = alphaSes * GasPrediction[i] + (1 - alphaSes) * gasForecast.Last();
-                    GasPrediction2.Add(prediction);
-                }
-                else
-                    GasPrediction2.Add(alphaSes * GasPrediction[i] + (1 - alphaSes) * GasPrediction2[i - 1]);
-            }
+            var previousSeasonIndex = (i + hwesParams.ForecasHorizon) % hwesParams.SeasonLength + 2;
+            GasPrediction.Add(levelValues[^1] + phi * i * trendValues[^1] + seasonalValues[previousSeasonIndex]);
         }
+
 
         var timeComputed = _watch.StopWatch();
         return new ALgoOutput
         {
             ForecastValues = gasForecast,
             ActualValues = hwesParams.ActualValues,
-            ColumnName = gasRequest.ColumnName,
             TotalCount = gasForecast.Count,
             AlgoType = model,
             LevelValues = levelValues,
@@ -198,12 +168,111 @@ public class MTGas : IMtGas
             SeasonalValues = seasonalValues,
             SeasonLength = hwesParams.SeasonLength,
             PredictionValues = GasPrediction,
-            TimeComputed = timeComputed,
-            PredictionValues2 = GasPrediction2,
-            weightHwes = weightHwes / hwesParams.ActualValues.Count % windowSize,
-            weightSes = weightSes / hwesParams.ActualValues.Count % windowSize
+            TimeComputed = timeComputed
         };
 
     }
 
+    private decimal NoiseLevel(decimal varRt, List<decimal> data, int seasonLength)
+    {
+        var n = data.Skip(seasonLength + 1).ToList();
+        var dataMean = data.Average();
+        var sd_Data = new List<decimal>();
+
+        for (int i = 0; i < n.Count(); i++)
+        {
+            var sd = (decimal)Math.Pow((double)data[i] - (double)dataMean, 2);
+            sd_Data.Add(sd);
+        }
+
+        var dataVariance = sd_Data.Average();
+
+        return 1 - (varRt / dataVariance);
+    }
+
+    private (decimal sStrength, decimal varNoise) SeasonalityStrength
+    (List<decimal> actualValues, List<decimal> level, List<decimal> seasonalValues, List<decimal> trend, int seasonLength)
+    {
+        var sn = seasonLength + 1;
+        var data = actualValues.Skip(sn).ToList();
+
+        var l = level;
+        var t = trend;
+        var s = seasonalValues;
+
+        var dTrended = new List<decimal>();
+        var remainder = new List<decimal>();
+
+        for (int i = sn; i < data.Count; i++)
+        {
+            int sIndex = i % seasonLength;
+            var dt = data[i] - (t[i] + l[i]);
+            var rt = dt - s[sIndex];
+
+            dTrended.Add(dt);
+            remainder.Add(rt);
+        }
+
+        var dtMean = dTrended.Average();
+        var rtMean = remainder.Average();
+        var n = Math.Min(dTrended.Count, remainder.Count);
+
+        var squaredDeviations_Dt = new List<decimal>();
+        var squaredDeviations_Rt = new List<decimal>();
+
+        for (int i = 0; i < n; i++)
+        {
+            var sd_Dt = (decimal)Math.Pow((double)dTrended[i] - (double)dtMean, 2);
+            var sd_Rt = (decimal)Math.Pow((double)remainder[i] - (double)rtMean, 2);
+
+            squaredDeviations_Dt.Add(sd_Dt);
+            squaredDeviations_Rt.Add(sd_Rt);
+        }
+
+        var dtVariance = squaredDeviations_Dt.Average();
+        var rtVariance = squaredDeviations_Rt.Average();
+
+        return new(1 - (rtVariance / dtVariance), rtVariance);
+    }
+
+    private decimal TrendStrength(List<decimal> level, List<decimal> trend, int seasonLength)
+    {
+        var s = seasonLength + 1;
+        var l = level;
+        var t = trend;
+        var ct = new List<decimal>();
+        var lMean = l.Average();
+
+        for (int i = s; i <= t.Count; i++)
+        {
+            var cSum = t.Take(i).Sum();
+            ct.Add(cSum);
+        }
+
+        var ctMean = ct.Average();
+        var n = Math.Min(l.Count, ct.Count);
+
+        var numerator = new List<decimal>();
+        var denominatorOne = new List<decimal>();
+        var denominatorTwo = new List<decimal>();
+
+        for (int i = s; i < n; i++)
+        {
+            var nume = (l[i] - lMean) * (ct[i] - ctMean);
+            var denoOne = Math.Pow((double)l[i] - (double)lMean, 2);
+            var denoTwo = Math.Pow((double)ct[i] - (double)ctMean, 2);
+
+            numerator.Add(nume);
+            denominatorOne.Add((decimal)denoOne);
+            denominatorTwo.Add((decimal)denoTwo);
+        }
+
+        var numeSum = numerator.Sum();
+        var denoOneSum = denominatorOne.Sum();
+        var denoTwoSum = denominatorTwo.Sum();
+
+        var r = (double)numeSum / Math.Sqrt((double)denoOneSum * (double)denoTwoSum);
+
+        return (decimal)Math.Pow(r, 2);
+    }
 }

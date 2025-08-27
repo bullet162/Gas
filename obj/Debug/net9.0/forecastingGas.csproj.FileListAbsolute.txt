@@ -9,6 +9,7 @@ C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\forecastingGas
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Azure.Core.dll
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Azure.Identity.dll
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Humanizer.dll
+C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\MathNet.Numerics.dll
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\Microsoft.Build.Locator.dll
@@ -164,4 +165,3 @@ C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\refint\forecas
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\forecastingGas.pdb
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\forecastingGas.genruntimeconfig.cache
 C:\Users\JHERSON\Documents\c#\web\forecastingGas\obj\Debug\net9.0\ref\forecastingGas.dll
-C:\Users\JHERSON\Documents\c#\web\forecastingGas\bin\Debug\net9.0\MathNet.Numerics.dll

@@ -123,7 +123,6 @@ namespace ForecastingGas.Algorithm.Hwes
 
                 int seasonIndex = (_seasonal.Count - _seasonLength + (i % _seasonLength)) % _seasonLength;
                 forecasts.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
-                Console.WriteLine($"season: {_seasonal[seasonIndex]}");
             }
 
             return forecasts;

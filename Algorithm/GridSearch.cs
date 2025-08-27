@@ -59,7 +59,7 @@ public class GridSearch : ISearch
     }
 
 
-    public (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
+    public (decimal alpha, decimal beta, decimal gamma, decimal mse, List<decimal> forecast) GridSearchHWES(
     List<decimal> actualData,
     int seasonLength,
     int steps = 20)
@@ -71,7 +71,7 @@ public class GridSearch : ISearch
                          from k in Enumerable.Range(0, steps + 1)
                          select new { Alpha = i * stepSize, Beta = j * stepSize, Gamma = k * stepSize };
 
-        var bestResult = new ConcurrentBag<(decimal alpha, decimal beta, decimal gamma, decimal mse)>();
+        var bestResult = new ConcurrentBag<(decimal alpha, decimal beta, decimal gamma, decimal mse, List<decimal> forecast)>();
 
         candidates
             .AsParallel()
@@ -95,7 +95,7 @@ public class GridSearch : ISearch
                 var forecast = _hwes.TrainForecast(hwesParams).ForecastValues;
                 decimal mse = ComputeMSE(actualData, forecast, seasonLength);
 
-                bestResult.Add((c.Alpha, c.Beta, c.Gamma, mse));
+                bestResult.Add((c.Alpha, c.Beta, c.Gamma, mse, forecast));
             });
 
         return bestResult.OrderBy(r => r.mse).First();

@@ -14,6 +14,9 @@ public class ALgoOutput
     public int SeasonLength { get; set; } = new();
     public List<decimal> PredictionValues = new();
     public string TimeComputed { get; set; } = string.Empty;
+    public List<decimal> PredictionValues2 = new();
+    public decimal weightSes = new();
+    public decimal weightHwes = new();
 }
 
 public class RawDataOutput
