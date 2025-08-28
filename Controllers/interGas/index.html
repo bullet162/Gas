@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guided-Adaptive Smoothing</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="flex bg-white min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-[var(--navy)] text-white p-6 space-y-6">
+    <h2 class="text-2xl font-bold">Menu</h2>
+    <button onclick="showSection('home')" class="menu-btn">Home</button>
+    <button onclick="showSection('about')" class="menu-btn">About</button>
+    <button onclick="showSection('upload')" class="menu-btn">Upload Dataset</button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-10">
+
+    <!-- Home Section -->
+    <section id="home" class="section">
+      <h1 class="main-title">GUIDED-ADAPTIVE SMOOTHING</h1>
+      <p class="intro-text">
+        This system demonstrates how forecasting is improved using the Guided-Adaptive Smoothing (GAS) technique.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="info-card">
+          <img src="dataset.jpg" alt="Dataset Icon" class="card-img">
+          <h3 class="card-title">Upload Dataset</h3>
+          <p>Accepts time series data in .CSV format for forecasting analysis.</p>
+        </div>
+        <div class="info-card">
+          <img src="line-chart.jpg" alt="Chart Icon" class="card-img">
+          <h3 class="card-title">Forecast Visualization</h3>
+          <p>Generates a line chart to compare forecasted trends visually.</p>
+        </div>
+        <div class="info-card">
+          <img src="metrics.jpg" alt="Metrics Icon" class="card-img">
+          <h3 class="card-title">Accuracy Comparison</h3>
+          <p>Calculates and visualizes RMSE, MSE, MAE, and MAPE across models.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section hidden">
+      <h2 class="section-title">How It Works</h2>
+      <ol class="steps-list">
+        <li><strong>Upload Dataset</strong> – (.CSV format) Contains date and value columns for time series forecasting.</li>
+        <li><strong>View Line Chart</strong> – Visualizes forecasted values using different models.</li>
+        <li><strong>View Error Metrics</strong> – Compares model accuracy using RMSE, MSE, MAE, MAPE.</li>
+      </ol>
+      <p class="description">
+        The model with the lowest error metrics is considered the most accurate. GAS typically performs better due to its adaptive smoothing logic.
+      </p>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="section hidden">
+      <h2 class="section-title">Upload Dataset</h2>
+      <input type="file" id="fileInput" class="mb-4" />
+      <div id="previewSection" class="hidden">
+        <table class="data-table">
+          <thead>
+            <tr><th class="p-3">Date</th><th class="p-3">Value</th></tr>
+          </thead>
+          <tbody id="dataTable"></tbody>
+        </table>
+        <button id="showChartBtn" class="action-btn">View Forecast Chart</button>
+        <canvas id="forecastChart" class="hidden mb-6"></canvas>
+        <button id="showMetricsBtn" class="hidden action-btn">Compute Error Metrics</button>
+        <div id="metricsSection" class="hidden mt-6">
+          <h3 class="section-subtitle">Forecast Accuracy Comparison</h3>
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th class="p-3">Model</th>
+                <th class="p-3">RMSE</th>
+                <th class="p-3">MSE</th>
+                <th class="p-3">MAE</th>
+                <th class="p-3">MAPE (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="p-3">SES</td><td>5.23</td><td>27.34</td><td>4.90</td><td>6.8</td></tr>
+              <tr><td class="p-3">Holt-Winters</td><td>3.91</td><td>15.29</td><td>3.64</td><td>4.9</td></tr>
+              <tr class="best-model"><td class="p-3">GAS</td><td>2.48</td><td>6.15</td><td>2.11</td><td>2.7</td></tr>
+            </tbody>
+          </table>
+          <canvas id="metricsChart" class="w-full max-w-2xl mx-auto mb-8"></canvas>
+          <p class="summary-text">
+            ✅ The <strong>GAS</strong> model is the most accurate because it has the lowest error metrics.
+          </p>
+          <!-- Forecast Comparison Line Chart -->
+          <h3 class="section-subtitle">Forecast Comparison</h3>
+          <canvas id="forecastComparisonChart" class="w-full max-w-3xl mx-auto"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
