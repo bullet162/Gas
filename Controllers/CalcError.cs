@@ -37,12 +37,11 @@ public class CalculateError : ControllerBase
             var fDatas = await _getForecastValues.GetForecastValuesByColumnName(headerName);
             var data = await _getData.ActualValues(headerName);
 
-            var algoData = fDatas
-            .Where(x => x.AlgoType.Trim().ToLower() == AlgoType.Trim().ToLower())
+            var algoData = fDatas.AlgoType
             .Select(d => new ALgoOutput
             {
-                ForecastValues = d.ForecastValues.ToList(),
-                AlgoType = d.AlgoType
+                ForecastValues = fDatas.PredictionValues,
+                AlgoType = AlgoType
             });
 
             if (!algoData.Any() || algoData == null)

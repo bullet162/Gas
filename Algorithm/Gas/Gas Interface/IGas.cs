@@ -25,3 +25,8 @@ public interface IBGAS
     ALgoOutput ApplyBGas(HwesParams hwesParams);
 
 }
+
+public interface IBlend
+{
+
+}

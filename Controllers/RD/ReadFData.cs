@@ -42,7 +42,7 @@ public class ReadForecast : ControllerBase
 
             var result = await _get.GetForecastValuesByColumnName(columnName);
 
-            if (result == null || result.Count == 0)
+            if (result == null)
                 return NotFound("No records found!");
             else
                 return Ok(result);

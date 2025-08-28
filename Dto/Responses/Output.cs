@@ -12,11 +12,10 @@ public class ALgoOutput
     public List<decimal> TrendValues { get; set; } = new();
     public List<decimal> SeasonalValues { get; set; } = new();
     public int SeasonLength { get; set; } = new();
-    public List<decimal> PredictionValues = new();
+    public List<decimal> PredictionValues { get; set; } = new();
     public string TimeComputed { get; set; } = string.Empty;
-    public List<decimal> PredictionValues2 = new();
-    public decimal weightSes = new();
-    public decimal weightHwes = new();
+    public List<decimal> PredictionValues2 { get; set; } = new();
+    public DateTime DatePredicted { get; set; }
 }
 
 public class RawDataOutput
