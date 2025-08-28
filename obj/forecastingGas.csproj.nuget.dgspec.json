@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\mjpan\\Gas\\forecastingGas.csproj": {}
+    "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\forecastingGas.csproj": {}
   },
   "projects": {
-    "C:\\Users\\mjpan\\Gas\\forecastingGas.csproj": {
+    "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\forecastingGas.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mjpan\\Gas\\forecastingGas.csproj",
+        "projectUniqueName": "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\forecastingGas.csproj",
         "projectName": "forecastingGas",
-        "projectPath": "C:\\Users\\mjpan\\Gas\\forecastingGas.csproj",
-        "packagesPath": "C:\\Users\\mjpan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mjpan\\Gas\\obj\\",
+        "projectPath": "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\forecastingGas.csproj",
+        "packagesPath": "C:\\Users\\JHERSON\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\mjpan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\JHERSON\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -92,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
