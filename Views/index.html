@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Upload</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .box { margin-bottom: 20px; }
+    label { display: block; margin: 5px 0; }
+    #columns { margin-top: 10px; }
+    canvas { max-width: 600px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Upload CSV</h2>
+
+  <!-- Column Names -->
+  <div class="box">
+    <label>Select CSV (for column names):</label>
+    <input type="file" id="fileColumns">
+    <button onclick="uploadColumns()">Get Columns</button>
+    <div id="columns"></div>
+  </div>
+
+  <!-- Actual Values -->
+  <div class="box">
+    <label>Select CSV (for actual values):</label>
+    <input type="file" id="fileValues">
+    <label>Column Name:</label>
+    <input type="text" id="columnName" placeholder="Enter column name">
+    <button onclick="uploadValues()">Get Actual Values</button>
+    <div id="meta"></div>
+    <canvas id="lineChart"></canvas>
+  </div>
+
+  <script>
+    const API_BASE = "http://192.168.1.34:5297/api/upload";
+
+    async function uploadColumns() {
+      const fileInput = document.getElementById("fileColumns");
+      if (!fileInput.files[0]) return alert("Select a CSV first");
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch(`${API_BASE}/csvColumnNames`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById("columns").innerText = "Columns: " + data.join(", ");
+    }
+
+    async function uploadValues() {
+      const fileInput = document.getElementById("fileValues");
+      const colName = document.getElementById("columnName").value;
+      if (!fileInput.files[0] || !colName) return alert("Select CSV and enter column name");
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("columnName", colName);
+
+      const res = await fetch(`${API_BASE}/csvActualValues`, {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await res.json();
+      const { columnName, totalCount, actualValues, dateOfEntry } = result;
+
+      // Show metadata
+      document.getElementById("meta").innerHTML = `
+        <p><b>Column:</b> ${columnName}</p>
+        <p><b>Total Count:</b> ${totalCount}</p>
+        <p><b>Date:</b> ${new Date(dateOfEntry).toLocaleDateString()}</p>
+      `;
+
+      // Plot line graph
+      const ctx = document.getElementById("lineChart").getContext("2d");
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: actualValues.map((_, i) => i + 1),
+          datasets: [{
+            label: columnName,
+            data: actualValues,
+            borderColor: 'blue',
+            fill: false
+          }]
+        }
+      });
+    }
+  </script>
+</body>
+</html>
