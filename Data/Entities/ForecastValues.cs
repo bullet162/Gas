@@ -10,8 +10,11 @@ public class ForecastDescription
 
     public string AlgoType { get; set; } = string.Empty;
     public string ColumnName { get; set; } = string.Empty;
-    public DateTime ForecastDate { get; set; } = DateTime.UtcNow;
+    public DateTime ForecastDate { get; set; } = DateTime.Today;
     public int TotalCount { get; set; }
+    public double Alpha { get; set; }
+    public double Beta { get; set; }
+    public double Gamma { get; set; }
     public List<ForecastValues> GetForecastValues { get; set; } = null!;
     public List<PredictionValues> GetPredictionValues { get; set; } = null!;
 
@@ -44,6 +47,7 @@ public class PredictionValues
     public int Id { get; set; }
 
     public decimal PredictionValue { get; set; }
+    public decimal PredictionValue2 { get; set; }
     public int ForecastDescriptionID { get; set; }
     public ForecastDescription GetForecastDescription { get; set; } = null!;
 }

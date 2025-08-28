@@ -51,8 +51,6 @@ public class MTGas : IMtGas
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
         _watch.StartWatch();
-        decimal weightSes = new();
-        decimal weightHwes = new();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
         List<decimal> trendValues = new();
@@ -129,8 +127,6 @@ public class MTGas : IMtGas
 
             var weights = _model.CalculateWeights(mseSes, mseHwes);
 
-            weightSes += weights.weightSes;
-            weightHwes += weights.weightHwes;
             var forecast = _model.GasWeightedForecast(forecastSes.forecast!, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
 
             if (end == windowSize)
@@ -183,6 +179,8 @@ public class MTGas : IMtGas
                 else
                     GasPrediction2.Add(alphaSes * GasPrediction[i] + (1 - alphaSes) * GasPrediction2[i - 1]);
             }
+
+
         }
 
         var timeComputed = _watch.StopWatch();
@@ -191,7 +189,7 @@ public class MTGas : IMtGas
             ForecastValues = gasForecast,
             ActualValues = hwesParams.ActualValues,
             ColumnName = gasRequest.ColumnName,
-            TotalCount = gasForecast.Count,
+            TotalCount = GasPrediction.Count,
             AlgoType = model,
             LevelValues = levelValues,
             TrendValues = trendValues,
@@ -199,11 +197,10 @@ public class MTGas : IMtGas
             SeasonLength = hwesParams.SeasonLength,
             PredictionValues = GasPrediction,
             TimeComputed = timeComputed,
-            PredictionValues2 = GasPrediction2,
-            weightHwes = weightHwes / hwesParams.ActualValues.Count % windowSize,
-            weightSes = weightSes / hwesParams.ActualValues.Count % windowSize
+            PredictionValues2 = GasPrediction2
         };
-
     }
+
+    // private List<decimal> 
 
 }

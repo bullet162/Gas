@@ -66,6 +66,7 @@ public class GasForecast : ControllerBase
                 SeasonalValues = result.SeasonalValues,
                 SeasonLength = result.SeasonLength,
                 PredictionValues = result.PredictionValues,
+                PredictionValues2 = result.PredictionValues2,
                 TimeComputed = result.TimeComputed
             };
 

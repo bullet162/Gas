@@ -35,27 +35,40 @@ public class GetForecastValues : IGetForecastValues
         return result;
     }
 
-    public async Task<List<ALgoOutput>> GetForecastValuesByColumnName(string columnName)
+    public async Task<ALgoOutput> GetForecastValuesByColumnName(string columnName)
     {
-        var flatResult = await _DBContext.GetForecastValues
-            .Where(x => x.GetForecastDescription.ColumnName == columnName)
-            .GroupBy(x => new
-            {
-                x.ForecastDescriptionID,
-                x.GetForecastDescription.AlgoType,
-                x.GetForecastDescription.Id,
-                x.GetForecastDescription.TotalCount
-            })
-            .Select(g => new ALgoOutput
-            {
-                Id = g.Key.ForecastDescriptionID,
-                AlgoType = g.Key.AlgoType,
-                ForecastValues = g.Select(f => f.ForecastValue).ToList(),
-                TotalCount = g.Key.TotalCount
-            })
-            .ToListAsync();
+        var result = await _DBContext.GetForecastValues
+            .Include(x => x.GetForecastDescription)
+            .ThenInclude(d => d.GetForecastValues.OrderBy(fv => fv.Id))
+            .Include(x => x.GetForecastDescription)
+            .ThenInclude(d => d.GetPredictionValues.OrderBy(pv => pv.Id))
+            .FirstOrDefaultAsync(x => x.GetForecastDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower());
 
-        return flatResult;
+        if (result == null) return null!;
+
+        var algoOutput = new ALgoOutput
+        {
+            Id = result.Id,
+            ForecastValues = result.GetForecastDescription.GetForecastValues
+                .OrderBy(x => x.Id)
+                .Select(x => x.ForecastValue).ToList(),
+
+            PredictionValues = result.GetForecastDescription.GetPredictionValues
+                .OrderBy(x => x.Id)
+                .Select(x => x.PredictionValue).ToList(),
+
+            PredictionValues2 = result.GetForecastDescription.GetPredictionValues
+                .OrderBy(x => x.Id)
+                .Select(x => x.PredictionValue2).ToList(),
+
+            AlgoType = result.GetForecastDescription.AlgoType,
+            SeasonLength = result.GetForecastDescription.SeasonLength,
+            DatePredicted = result.GetForecastDescription.ForecastDate,
+            ColumnName = result.GetForecastDescription.ColumnName,
+            TotalCount = result.GetForecastDescription.TotalCount,
+            TimeComputed = result.GetForecastDescription.TimeComputed
+        };
+
+        return algoOutput;
     }
-
 }

@@ -10,7 +10,7 @@ public class ErrorValues
 
     public string ColumnName { get; set; } = string.Empty;
     public string AlgoType { get; set; } = string.Empty;
-    public DateTime DateEvaluated { get; set; } = DateTime.UtcNow;
+    public DateTime DateEvaluated { get; set; } = DateTime.Today;
 
     public double RMSE { get; set; }
 

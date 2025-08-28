@@ -103,17 +103,11 @@ public class BenchmarkController : Controller
 
                 var error1 = _error.EvaluateAlgoErrors(errorParam);
                 var error2 = _error.EvaluateAlgoErrors(errorParam2);
-                var probSes = result.weightSes * 100;
-                var probHwes = result.weightHwes * 100;
-                string probabilityOfHwesPrediction = $"There is {probHwes}% for the 1st prediction. (see error1)";
 
-                string probabilityOfSesPredictionBlendedHwes = $"There is {probSes}% for the 2nd prediction. (see error2)";
                 return Ok(new
                 {
                     error1,
-                    probabilityOfHwesPrediction,
                     error2,
-                    probabilityOfSesPredictionBlendedHwes,
                     result.TimeComputed
 
                 });
