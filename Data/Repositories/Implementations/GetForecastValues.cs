@@ -48,7 +48,6 @@ public class GetForecastValues : IGetForecastValues
 
         var algoOutput = new ALgoOutput
         {
-            Id = result.Id,
             ForecastValues = result.GetForecastDescription.GetForecastValues
                 .OrderBy(x => x.Id)
                 .Select(x => x.ForecastValue).ToList(),

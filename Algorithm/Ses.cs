@@ -52,7 +52,6 @@ public class ForecastSes : ISes
             TotalCount = TotalCount,
             PredictionValues = output.PredictionValues,
             TimeComputed = timeComputed
-
         };
 
         return result;
