@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("forecastingGas")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dd60a3cb62f871a1f244055d2848376939631a9e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d0d5413c6210ef644066b715e9ad69b2a2f69839")]
 [assembly: System.Reflection.AssemblyProductAttribute("forecastingGas")]
 [assembly: System.Reflection.AssemblyTitleAttribute("forecastingGas")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
