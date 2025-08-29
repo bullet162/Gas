@@ -139,13 +139,15 @@ public class BenchmarkController : Controller
             if (benchmark.LogTransform.Trim().ToLower() == "yes")
             {
                 Pred1 = _process.BackLogTransform(result.PredictionValues);
-                Pred2 = _process.BackLogTransform(result.PredictionValues2);
+                if (input == "oldgas")
+                    Pred2 = _process.BackLogTransform(result.PredictionValues2);
                 data1 = _process.BackLogTransform(ActualValues.Test);
             }
             else
             {
                 Pred1 = result.PredictionValues;
-                Pred2 = result.PredictionValues2;
+                if (input == "oldgas")
+                    Pred2 = result.PredictionValues2;
                 data1 = ActualValues.Test;
             }
 

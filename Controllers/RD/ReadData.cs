@@ -42,7 +42,12 @@ public class ReadActualValues : ControllerBase
             if (result.Values == null || result.Values.Count == 0 && result.ColumnName == string.Empty)
                 return NotFound("No actual values found for the requested Id.");
 
-            return Ok(result);
+            return Ok(new
+            {
+                result.ColumnName,
+                result.Values,
+                result.Values.Count
+            });
         }
         catch (Exception ex)
         {
