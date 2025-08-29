@@ -12,4 +12,12 @@ public class TrainTest : ITrainTest
 
         return new(train, test);
     }
+
+    public List<decimal> Cut(List<decimal> ActualValues)
+    {
+        var trainSize = (int)(ActualValues.Count * 0.25);
+        var data = ActualValues.Skip(trainSize).ToList();
+
+        return data;
+    }
 }

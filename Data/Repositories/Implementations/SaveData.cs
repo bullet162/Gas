@@ -27,16 +27,22 @@ public class SaveData : ISaveData
             {
                 ForecastValue = x
             }).ToList(),
-            SeasonalValues = output.SeasonalValues,
-            TrendValues = output.TrendValues,
-            LevelValues = output.LevelValues,
-            SeasonLength = output.SeasonLength,
             GetPredictionValues = output.PredictionValues
             .Select(x => new PredictionValues
             {
                 PredictionValue = x
             }).ToList(),
-            TimeComputed = output.TimeComputed
+            GetPredictionValues2 = output.PredictionValues2
+            .Select(x => new PredictionValues2
+            {
+                PredictionValue2 = x
+            }).ToList(),
+            TimeComputed = output.TimeComputed,
+            AlphaSes = (double)output.AlphaSes,
+            AlphaHwes = (double)output.AlphaHwes,
+            Beta = (double)output.Beta,
+            Gamma = (double)output.Gamma
+
         };
 
         if (result == null)
@@ -85,7 +91,11 @@ public class SaveData : ISaveData
             RMSE = output.RMSE,
             MSE = output.MSE,
             MAE = output.MAE,
-            MAPE = output.MAPE
+            MAPE = output.MAPE,
+            RMSE2 = output.RMSE2,
+            MSE2 = output.MSE2,
+            MAE2 = output.MAE2,
+            MAPE2 = output.MAPE2
         };
 
         if (results == null)

@@ -42,6 +42,8 @@ public class GetForecastValues : IGetForecastValues
             .ThenInclude(d => d.GetForecastValues.OrderBy(fv => fv.Id))
             .Include(x => x.GetForecastDescription)
             .ThenInclude(d => d.GetPredictionValues.OrderBy(pv => pv.Id))
+            .Include(x => x.GetForecastDescription)
+            .ThenInclude(d => d.GetPredictionValues2.OrderBy(cv => cv.Id))
             .FirstOrDefaultAsync(x => x.GetForecastDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower());
 
         if (result == null) return null!;
@@ -56,7 +58,7 @@ public class GetForecastValues : IGetForecastValues
                 .OrderBy(x => x.Id)
                 .Select(x => x.PredictionValue).ToList(),
 
-            PredictionValues2 = result.GetForecastDescription.GetPredictionValues
+            PredictionValues2 = result.GetForecastDescription.GetPredictionValues2
                 .OrderBy(x => x.Id)
                 .Select(x => x.PredictionValue2).ToList(),
 

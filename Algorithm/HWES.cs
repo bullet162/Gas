@@ -102,7 +102,10 @@ namespace ForecastingGas.Algorithm.Hwes
                 SeasonalValues = _seasonal,
                 SeasonLength = _seasonLength,
                 PredictionValues = hwesParams.PredictionValues,
-                TimeComputed = time
+                TimeComputed = time,
+                AlphaHwes = hwesParams.Alpha,
+                Beta = hwesParams.Beta,
+                Gamma = hwesParams.Gamma
             };
 
             return results;

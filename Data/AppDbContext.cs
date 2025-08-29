@@ -8,37 +8,44 @@ namespace ForecastingGas.Data;
 public class AppDbContext : DbContext
 {
 
-    public DbSet<ActualValues> GetActualValues { get; set; }
-    public DbSet<DataDescription> GetDataDescriptions { get; set; }
+  public DbSet<ActualValues> GetActualValues { get; set; }
+  public DbSet<DataDescription> GetDataDescriptions { get; set; }
 
-    public DbSet<ForecastDescription> GetForecastDescriptions { get; set; }
-    public DbSet<ForecastValues> GetForecastValues { get; set; }
-    public DbSet<PredictionValues> GetPredictionValues { get; set; }
+  public DbSet<ForecastDescription> GetForecastDescriptions { get; set; }
+  public DbSet<ForecastValues> GetForecastValues { get; set; }
+  public DbSet<PredictionValues> GetPredictionValues { get; set; }
+  public DbSet<PredictionValues2> GetPredictionValues2 { get; set; }
 
-    public DbSet<ErrorValues> GetErrorValues { get; set; }
+  public DbSet<ErrorValues> GetErrorValues { get; set; }
 
 
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+  public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<ActualValues>()
-       .HasOne(av => av.GetDataDescription)
-       .WithMany(dd => dd.ActualValues)
-       .HasForeignKey(av => av.DataDescriptionID)
-       .OnDelete(DeleteBehavior.Cascade);
+  protected override void OnModelCreating(ModelBuilder modelBuilder)
+  {
+    modelBuilder.Entity<ActualValues>()
+   .HasOne(av => av.GetDataDescription)
+   .WithMany(dd => dd.ActualValues)
+   .HasForeignKey(av => av.DataDescriptionID)
+   .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<ForecastValues>()
-       .HasOne(x => x.GetForecastDescription)
-       .WithMany(a => a.GetForecastValues)
-       .HasForeignKey(c => c.ForecastDescriptionID)
-       .OnDelete(DeleteBehavior.Cascade);
+    modelBuilder.Entity<ForecastValues>()
+   .HasOne(x => x.GetForecastDescription)
+   .WithMany(a => a.GetForecastValues)
+   .HasForeignKey(c => c.ForecastDescriptionID)
+   .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<PredictionValues>()
-        .HasOne(p => p.GetForecastDescription)
-        .WithMany(fd => fd.GetPredictionValues)
-        .HasForeignKey(p => p.ForecastDescriptionID)
+    modelBuilder.Entity<PredictionValues>()
+    .HasOne(p => p.GetForecastDescription2)
+    .WithMany(fd => fd.GetPredictionValues)
+    .HasForeignKey(p => p.ForecastDescriptionID2)
+    .OnDelete(DeleteBehavior.Cascade);
+
+
+    modelBuilder.Entity<PredictionValues2>()
+        .HasOne(p => p.GetForecastDescription3)
+        .WithMany(fd => fd.GetPredictionValues2)
+        .HasForeignKey(p => p.ForecastDescriptionID3)
         .OnDelete(DeleteBehavior.Cascade);
-
-    }
+  }
 }

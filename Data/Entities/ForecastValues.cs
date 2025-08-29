@@ -12,21 +12,13 @@ public class ForecastDescription
     public string ColumnName { get; set; } = string.Empty;
     public DateTime ForecastDate { get; set; } = DateTime.Today;
     public int TotalCount { get; set; }
-    public double Alpha { get; set; }
+    public double AlphaSes { get; set; }
+    public double AlphaHwes { get; set; }
     public double Beta { get; set; }
     public double Gamma { get; set; }
     public List<ForecastValues> GetForecastValues { get; set; } = null!;
     public List<PredictionValues> GetPredictionValues { get; set; } = null!;
-
-    [Column(TypeName = "nvarchar(max)")]
-    public List<decimal> LevelValues { get; set; } = new();
-
-    [Column(TypeName = "nvarchar(max)")]
-    public List<decimal> TrendValues { get; set; } = new();
-
-    [Column(TypeName = "nvarchar(max)")]
-    public List<decimal> SeasonalValues { get; set; } = new();
-
+    public List<PredictionValues2> GetPredictionValues2 { get; set; } = null!;
     public int SeasonLength { get; set; } = new();
     public string TimeComputed { get; set; } = string.Empty;
 }
@@ -37,6 +29,8 @@ public class ForecastValues
 
     [Column(TypeName = "decimal(18,9)")]
     public decimal ForecastValue { get; set; }
+
+    [ForeignKey("ForecastDescription")]
     public int ForecastDescriptionID { get; set; }
     public ForecastDescription GetForecastDescription { get; set; } = null!;
 }
@@ -46,8 +40,23 @@ public class PredictionValues
     [Key]
     public int Id { get; set; }
 
+    [Column(TypeName = "decimal(18,9)")]
     public decimal PredictionValue { get; set; }
+
+    [ForeignKey("ForecastDescription")]
+    public int ForecastDescriptionID2 { get; set; }
+    public ForecastDescription GetForecastDescription2 { get; set; } = null!;
+}
+
+public class PredictionValues2
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Column(TypeName = "decimal(18,9)")]
     public decimal PredictionValue2 { get; set; }
-    public int ForecastDescriptionID { get; set; }
-    public ForecastDescription GetForecastDescription { get; set; } = null!;
+
+    [ForeignKey("ForecastDescription")]
+    public int ForecastDescriptionID3 { get; set; }
+    public ForecastDescription GetForecastDescription3 { get; set; } = null!;
 }

@@ -13,7 +13,7 @@ public class ForecastSes : ISes
         _watch = watch;
     }
 
-    public ALgoOutput SesForecast(decimal alphA, List<decimal> datA, int forecastHorizon)
+    public ALgoOutput SesForecast(decimal alpha, List<decimal> datA, int forecastHorizon)
     {
         _watch.StartWatch();
 
@@ -23,7 +23,6 @@ public class ForecastSes : ISes
         forecastHorizon = forecastHorizon == 0 ? 1 : forecastHorizon;
 
         const string Name = "SES";
-        var alpha = alphA;
         var data = datA;
         var prediction = new decimal();
         var output = new ALgoOutput();
@@ -51,7 +50,8 @@ public class ForecastSes : ISes
             AlgoType = Name,
             TotalCount = TotalCount,
             PredictionValues = output.PredictionValues,
-            TimeComputed = timeComputed
+            TimeComputed = timeComputed,
+            AlphaSes = alpha
         };
 
         return result;

@@ -29,10 +29,9 @@ public class MTGas : IMtGas
 
     public (List<decimal> forecast, decimal alpha) CalculateSes(SesParams ses)
     {
-        var alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
-        var results = _ses.SesForecast(alpha, ses.ActualValues, ses.ForecastHorizon);
+        var results = _ses.SesForecast(0.1m, ses.ActualValues, ses.ForecastHorizon);
 
-        return new(results.ForecastValues, alpha);
+        return new(results.ForecastValues, results.AlphaSes);
     }
 
     public ALgoOutput CalculateHwes(HwesParams hwesParams)
@@ -58,6 +57,9 @@ public class MTGas : IMtGas
         List<decimal> GasPrediction = new();
         List<decimal> GasPrediction2 = new();
         decimal alphaSes = new();
+        decimal alphaHwes = new();
+        decimal beta = new();
+        decimal gamma = new();
         const string model = "GAS";
         var newHwesParams = new HwesParams();
         int windowSize = hwesParams.ActualValues.Count / 2;
@@ -107,6 +109,10 @@ public class MTGas : IMtGas
             );
 
             alphaSes = forecastSes.alpha;
+            alphaHwes = forecastHwes.AlphaHwes;
+            beta = forecastHwes.Beta;
+            gamma = forecastHwes.Gamma;
+
 
             var sesError = new ErrorParams
             {
@@ -162,7 +168,7 @@ public class MTGas : IMtGas
                 LevelValues = levelValues,
                 TrendValues = trendValues,
                 SeasonalValues = seasonalValues,
-                PredictionValues = hwesParams.PredictionValues
+                PredictionValues = hwesParams.PredictionValues,
             };
 
             GasPrediction = _hwes.GenerateForecasts(newHwesParams);
@@ -197,7 +203,11 @@ public class MTGas : IMtGas
             SeasonLength = hwesParams.SeasonLength,
             PredictionValues = GasPrediction,
             TimeComputed = timeComputed,
-            PredictionValues2 = GasPrediction2
+            PredictionValues2 = GasPrediction2,
+            AlphaSes = alphaSes,
+            AlphaHwes = alphaHwes,
+            Beta = beta,
+            Gamma = gamma
         };
     }
 

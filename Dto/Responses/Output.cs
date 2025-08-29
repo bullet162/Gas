@@ -12,6 +12,10 @@ public class ALgoOutput
     public List<decimal> TrendValues { get; set; } = new();
     public List<decimal> SeasonalValues { get; set; } = new();
     public int SeasonLength { get; set; } = new();
+    public decimal AlphaSes { get; set; } = new();
+    public decimal AlphaHwes { get; set; } = new();
+    public decimal Beta { get; set; } = new();
+    public decimal Gamma { get; set; } = new();
     public List<decimal> PredictionValues { get; set; } = new();
     public string TimeComputed { get; set; } = string.Empty;
     public List<decimal> PredictionValues2 { get; set; } = new();
@@ -35,4 +39,8 @@ public class ErrorOutput
     public decimal MAE { get; set; } = new();
     public decimal MAPE { get; set; } = new();
     public decimal MSE { get; set; } = new();
+    public double RMSE2 { get; set; }
+    public decimal MAE2 { get; set; }
+    public decimal MAPE2 { get; set; }
+    public decimal MSE2 { get; set; }
 }
