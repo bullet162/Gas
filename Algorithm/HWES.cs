@@ -66,6 +66,8 @@ namespace ForecastingGas.Algorithm.Hwes
             var alpha = hwesParams.Alpha;
             var beta = hwesParams.Beta;
             var gamma = hwesParams.Gamma;
+            // Console.WriteLine($"hwes: alpha={alpha}, beta={beta}, gamma={gamma}");
+
 
             for (int i = _seasonLength + 1; i < data.Count; i++)
             {

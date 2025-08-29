@@ -89,6 +89,10 @@ public class BenchmarkController : Controller
 
 
             var result = new ALgoOutput();
+
+            List<decimal> backfData = new();
+            List<decimal> backfData2 = new();
+            List<decimal> backData = new();
             var input = benchmark.AlgoType.Trim().ToLower();
 
 
@@ -105,16 +109,28 @@ public class BenchmarkController : Controller
             {
                 result = _gas.ApplyMtGas(hwesParams, gasParams);
 
+                if (input == "yes")
+                {
+                    backfData = _process.BackLogTransform(result.PredictionValues);
+                    backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                    backData = _process.BackLogTransform(ActualValues.Test);
+                }
+                else
+                {
+                    backfData = result.PredictionValues;
+                    backfData2 = result.PredictionValues2;
+                    backData = ActualValues.Test;
+                }
                 var errorParam = new ErrorEvaluate
                 {
-                    ActualValues = ActualValues.Test,
-                    ForecastValues = result.PredictionValues
+                    ActualValues = backData,
+                    ForecastValues = backfData
                 };
 
                 var errorParam2 = new ErrorEvaluate
                 {
-                    ActualValues = ActualValues.Test,
-                    ForecastValues = result.PredictionValues2
+                    ActualValues = backData,
+                    ForecastValues = backfData2
                 };
 
                 error1 = _error.EvaluateAlgoErrors(errorParam);
@@ -124,39 +140,34 @@ public class BenchmarkController : Controller
             else
                 return NotFound("404!");
 
-            var errorParams = new ErrorEvaluate
+
+            if (input == "yes")
             {
-                ActualValues = ActualValues.Test,
-                ForecastValues = result.PredictionValues
-            };
-
-            error1 = _error.EvaluateAlgoErrors(errorParams);
-
-            List<decimal> Pred1 = new();
-            List<decimal> Pred2 = new();
-            List<decimal> data1 = new();
-
-            if (benchmark.LogTransform.Trim().ToLower() == "yes")
-            {
-                Pred1 = _process.BackLogTransform(result.PredictionValues);
-                if (input == "oldgas")
-                    Pred2 = _process.BackLogTransform(result.PredictionValues2);
-                data1 = _process.BackLogTransform(ActualValues.Test);
+                backfData = _process.BackLogTransform(result.PredictionValues);
+                backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                backData = _process.BackLogTransform(ActualValues.Test);
             }
             else
             {
-                Pred1 = result.PredictionValues;
-                if (input == "oldgas")
-                    Pred2 = result.PredictionValues2;
-                data1 = ActualValues.Test;
+                backfData = result.PredictionValues;
+                backfData2 = result.PredictionValues2;
+                backData = ActualValues.Test;
             }
+
+            var errorParams = new ErrorEvaluate
+            {
+                ActualValues = backData,
+                ForecastValues = backfData
+            };
+
+            error1 = _error.EvaluateAlgoErrors(errorParams);
 
             var algoOutput = new ALgoOutput
             {
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
-                PredictionValues = Pred1,
-                PredictionValues2 = Pred2,
+                PredictionValues = backfData,
+                PredictionValues2 = backfData2,
                 AlphaSes = result.AlphaSes,
                 AlphaHwes = result.AlphaHwes,
                 Beta = result.Beta,
@@ -178,22 +189,12 @@ public class BenchmarkController : Controller
                 RMSE2 = error2.RMSE
             };
 
-            await _save.SaveDatas(algoOutput);
-            await _save.SaveErrorData(errorOutput);
+            // await _save.SaveDatas(algoOutput);
+            // await _save.SaveErrorData(errorOutput);
 
             return Ok(new
             {
-                result.AlgoType,
-                data.ColumnName,
-                result.AlphaSes,
-                result.AlphaHwes,
-                result.Beta,
-                result.Gamma,
-                data1,
-                Pred1,
-                Pred2,
-                error1,
-                error2,
+                errorOutput,
                 result.TimeComputed
             });
         }
