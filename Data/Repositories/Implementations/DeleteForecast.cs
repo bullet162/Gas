@@ -15,10 +15,9 @@ public class DeleteForecast : IDeleteForecast
     public async Task<bool> DeleteAllForecasts()
     {
         var forecasts = await _DBContext.GetForecastDescriptions.ToListAsync();
+
         if (forecasts.Count == 0)
-        {
             return false;
-        }
 
         _DBContext.GetForecastDescriptions.RemoveRange(forecasts);
         await _DBContext.SaveChangesAsync();
@@ -28,10 +27,9 @@ public class DeleteForecast : IDeleteForecast
     public async Task<bool> DeleteForecastById(int id)
     {
         var forecast = await _DBContext.GetForecastDescriptions.FindAsync(id);
+
         if (forecast == null)
-        {
             return false;
-        }
 
         _DBContext.GetForecastDescriptions.Remove(forecast);
         await _DBContext.SaveChangesAsync();

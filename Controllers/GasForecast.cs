@@ -12,16 +12,18 @@ namespace ForecastingGas.Controllers;
 public class GasForecast : ControllerBase
 {
     private readonly IGetData _getData;
+    private readonly IGetForecastValues _getF;
     private ISaveData _saveData;
     private IMtGas _gasForecastAlgorithm;
     private ITrainTest _traintest;
 
-    public GasForecast(IGetData getData, ISaveData saveData, IMtGas gasForecastAlgorithm, ITrainTest trainTest)
+    public GasForecast(IGetData getData, ISaveData saveData, IMtGas gasForecastAlgorithm, ITrainTest trainTest, IGetForecastValues getF)
     {
         _getData = getData;
         _saveData = saveData;
         _gasForecastAlgorithm = gasForecastAlgorithm;
         _traintest = trainTest;
+        _getF = getF;
     }
 
     [HttpPost("gas")]
@@ -30,26 +32,35 @@ public class GasForecast : ControllerBase
         try
         {
             var data = await _getData.ActualValues(input.ColumnName);
+            var column = await _getF.GetForecastDescriptions();
+
+            var check = column
+            .Where(x => x.ColumnName.Trim().ToLower() == data.ColumnName.Trim().ToLower())
+            .Select(x => x.ColumnName)
+            .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(check))
+                return Conflict(new { message = "Forecast for this dataset already exists." });
 
             var inputLog = input.LogTransform.Trim().ToLower();
 
             List<decimal> actualData = new();
 
             if (inputLog == "yes")
-                actualData = _traintest.Cut(data.Values);
+                actualData = _traintest.Cut(data.ActualValues);
             else
-                actualData = data.Values;
+                actualData = data.ActualValues;
 
             if (actualData == null || actualData.Count == 0)
                 return BadRequest("No actual values found for the requested Id.");
 
             var hwesParameters = new HwesParams
             {
-                ActualValues = data.Values,
+                ActualValues = data.ActualValues,
                 Alpha = new decimal(),
                 Beta = new decimal(),
                 Gamma = new decimal(),
-                ForecasHorizon = data.Values.Count * (int)0.25,
+                ForecasHorizon = data.ActualValues.Count * (int)0.25,
                 ForecastValues = new List<decimal>(),
                 LevelValues = new List<decimal>(),
                 TrendValues = new List<decimal>(),
@@ -62,7 +73,7 @@ public class GasForecast : ControllerBase
             var gasParameters = new GasRequest
             {
                 ColumnName = data.ColumnName,
-                AddPrediction = input.AddPrediction
+                AddPrediction = "yes"
             };
 
             var result = _gasForecastAlgorithm.ApplyMtGas(hwesParameters, gasParameters);
@@ -87,8 +98,8 @@ public class GasForecast : ControllerBase
 
             return Ok(new
             {
-                result.PredictionValues,
-                result.PredictionValues2,
+                prediction1 = result.PredictionValues,
+                prediction2 = result.PredictionValues2,
             });
         }
         catch (Exception ex)

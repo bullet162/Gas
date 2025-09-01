@@ -12,10 +12,12 @@ public class UploadFile : ControllerBase
 {
     private IUploadCsv _csv;
     private ISaveData _save;
-    public UploadFile(IUploadCsv upload, ISaveData save)
+    private readonly IGetData _get;
+    public UploadFile(IUploadCsv upload, ISaveData save, IGetData get)
     {
         _csv = upload;
         _save = save;
+        _get = get;
     }
 
     //search for libraries for api callings
@@ -26,11 +28,18 @@ public class UploadFile : ControllerBase
         {
             var result = await _csv.ShowColumnNames(fileUpload);
 
-            return Ok(result);
+            return Ok(new
+            {
+                columnNames = result
+            });
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            return NotFound(ex.Message);
+            return BadRequest(new { message = $"Something went wrong: {ex.Message}" });
         }
     }
 
@@ -49,13 +58,29 @@ public class UploadFile : ControllerBase
                 DateOfEntry = DateTime.Today
             };
 
+            var column = await _get.GetAllColumnNamesAndId();
+
+            var check = column
+            .Where(x => x.ColumnName.Trim().ToLower() == result.columnName.Trim().ToLower())
+            .Select(x => x.ColumnName)
+            .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(check))
+                return Conflict(new { message = "Data already exist in the database." });
+
             await _save.SaveRawData(saveResult);
 
-            return Ok(saveResult);
+            return Ok(new
+            {
+                columnName = result.columnName,
+                totalCount = result.totalCount,
+                actualData = result.actualValues,
+                dateOfEntry = DateTime.UtcNow
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest($"something went wrong: {ex.Message}");
+            return BadRequest($"Something went wrong: {ex.Message}");
         }
     }
 

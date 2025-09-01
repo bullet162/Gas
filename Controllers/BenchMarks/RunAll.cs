@@ -47,15 +47,15 @@ public class BenchmarkController : Controller
 
             var data = await _get.ActualValues(benchmark.ColumnName);
 
-            if (data.Values == null || data.Values.Count == 0)
+            if (data.ActualValues == null || data.ActualValues.Count == 0)
                 return NotFound("No data found with that column name...");
 
             List<decimal> LogValues = new();
 
             if (benchmark.LogTransform.Trim().ToLower() == "yes")
-                LogValues = _process.LogTransformation(data.Values);
+                LogValues = _process.LogTransformation(data.ActualValues);
             else
-                LogValues = data.Values;
+                LogValues = data.ActualValues;
 
             var ActualValues = _TrainTest.SplitDataTwo(LogValues);
 
@@ -194,8 +194,8 @@ public class BenchmarkController : Controller
 
             return Ok(new
             {
-                errorOutput,
-                result.TimeComputed
+                algoOutput,
+                errorOutput
             });
         }
         catch (Exception ex)

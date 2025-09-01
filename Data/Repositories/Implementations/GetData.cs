@@ -29,36 +29,38 @@ public class Data : IGetData
         .ThenBy(x => x.Id)
         .ToListAsync();
 
+        if (result == null || !result.Any())
+            throw new ArgumentNullException("No Data found in the database.");
+
         return result;
     }
 
     //Get ColumnName and ActualValues by columnName
-    public async Task<(List<decimal> Values, string ColumnName)> ActualValues(string columnName)
+    public async Task<RawDataOutput> ActualValues(string columnName)
     {
 
         if (string.IsNullOrEmpty(columnName))
-            throw new ArgumentException("Column name cannot be null or empty.");
+            throw new ArgumentNullException("Column name cannot be null or empty.");
 
         var data = await _DbContext.GetActualValues
             .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower())
-            .Select(x => x.ActualValue)
-            .ToListAsync();
+            .Select(x => new RawDataOutput
+            {
+                Id = x.GetDataDescription.Id,
+                ActualValues = x.GetDataDescription.ActualValues.Select(a => a.ActualValue).ToList(),
+                ColumnName = x.GetDataDescription.ColumnName,
+                TotalCount = x.GetDataDescription.TotalCount,
+                DateOfEntry = x.GetDataDescription.DateUploaded
+            })
+            .OrderByDescending(x => x.DateOfEntry)
+            .ThenBy(x => x.Id)
+            .FirstOrDefaultAsync();
 
-        if (data == null || !data.Any() || data.Count < 5)
+        if (data == null)
             throw new ArgumentException("Invalid or insufficient data.");
 
-        else
-        {
-            var NameofColumn = await _DbContext.GetDataDescriptions
-                .Where(d => d.ColumnName == columnName)
-                .Select(d => d.ColumnName)
-                .FirstOrDefaultAsync();
+        return data;
 
-            if (string.IsNullOrEmpty(NameofColumn))
-                throw new ArgumentException("Column name not found for the provided Id.");
-
-            return (data, columnName);
-        }
     }
 
 }

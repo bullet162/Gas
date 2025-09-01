@@ -1,4 +1,5 @@
 using ForecastingGas.Data.Repositories.Interfaces;
+using ForecastingGas.Dto.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace forecastingGas.Controllers.CRUD;
@@ -39,15 +40,10 @@ public class ReadActualValues : ControllerBase
         {
             var result = await _get.ActualValues(columnName);
 
-            if (result.Values == null || result.Values.Count == 0 && result.ColumnName == string.Empty)
+            if (result == null || result.ActualValues.Count == 0 && result.ColumnName == string.Empty)
                 return NotFound("No actual values found for the requested Id.");
 
-            return Ok(new
-            {
-                result.ColumnName,
-                result.Values,
-                result.Values.Count
-            });
+            return Ok(result);
         }
         catch (Exception ex)
         {

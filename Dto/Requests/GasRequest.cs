@@ -12,8 +12,6 @@ public class GasRequestController
 {
     public string ColumnName { get; set; } = string.Empty;
 
-    public string AddPrediction { get; set; } = string.Empty;
-
     public string LogTransform { get; set; } = "";
 
 }
