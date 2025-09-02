@@ -59,10 +59,38 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+try
+{
+    db.Database.CanConnect(); // returns true if connection works
+    Console.WriteLine("✅ Connection to Supabase successful!");
+}
+catch (Exception ex)
+{
+    Console.WriteLine("❌ Connection failed: " + ex.Message);
+}
+
+
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://*:{port}");
 
 app.MapGet("/heathz", () => Results.Ok("Healthy"));
+
+
+app.MapGet("/test-db", async (AppDbContext db) =>
+{
+    try
+    {
+        var tables = await db.GetForecastDescriptions.ToListAsync();
+        return Results.Ok(new { success = true, count = tables.Count });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
+});
 
 if (app.Environment.IsDevelopment())
 {

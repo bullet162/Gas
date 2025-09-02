@@ -516,3 +516,5 @@ C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\pu
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.deps.json
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.runtimeconfig.json
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.staticwebassets.endpoints.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\Npgsql.dll
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
