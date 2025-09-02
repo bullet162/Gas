@@ -10,7 +10,6 @@ namespace ForecastingGas
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
-            // use LocalDB
             optionsBuilder.UseSqlServer(
                 "Server=(localdb)\\MSSQLLocalDB;Database=GasDb;Trusted_Connection=True;TrustServerCertificate=True;");
 

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace forecastingGas.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250829133814_InitialClean")]
-    partial class InitialClean
+    [Migration("20250902162748_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -196,7 +196,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PredictionValue")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,9)");
 
                     b.HasKey("Id");
 
@@ -217,7 +217,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PredictionValue2")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,9)");
 
                     b.HasKey("Id");
 
