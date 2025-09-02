@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "KbiGl3sUYZw=",
+  "dgSpecHash": "Rt2PM1IEY4k=",
   "success": true,
-  "projectFilePath": "C:\\Users\\JHERSON\\Documents\\c#\\web\\forecastingGas\\forecastingGas.csproj",
+  "projectFilePath": "C:\\Users\\JHERSON\\Documents\\csharp\\web\\forecastingGas\\forecastingGas.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\JHERSON\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\JHERSON\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
