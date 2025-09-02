@@ -504,3 +504,15 @@ C:\Users\JHERSON\Documents\csharp\web\forecastingGas\obj\Debug\net9.0\refint\for
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\obj\Debug\net9.0\forecastingGas.pdb
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\obj\Debug\net9.0\forecastingGas.genruntimeconfig.cache
 C:\Users\JHERSON\Documents\csharp\web\forecastingGas\obj\Debug\net9.0\ref\forecastingGas.dll
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\web.config
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\web.config
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\appsettings.Development.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\appsettings.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\forecastingGas.deps.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\forecastingGas.runtimeconfig.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\forecastingGas.staticwebassets.endpoints.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\appsettings.Development.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\appsettings.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.deps.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.runtimeconfig.json
+C:\Users\JHERSON\Documents\csharp\web\forecastingGas\bin\Debug\net9.0\publish\publish\forecastingGas.staticwebassets.endpoints.json
