@@ -61,6 +61,8 @@ public class BenchmarkController : Controller
 
             var error1 = new ErrorOutput();
             var error2 = new ErrorOutput();
+            var error3 = new ErrorOutput();
+
 
             var seasonLength = ActualValues.Train.Count / 10;
 
@@ -92,6 +94,8 @@ public class BenchmarkController : Controller
 
             List<decimal> backfData = new();
             List<decimal> backfData2 = new();
+            List<decimal> backfData3 = new();
+
             List<decimal> backData = new();
             var input = benchmark.AlgoType.Trim().ToLower();
 
@@ -109,16 +113,20 @@ public class BenchmarkController : Controller
             {
                 result = _gas.ApplyMtGas(hwesParams, gasParams);
 
-                if (input == "yes")
+                if (benchmark.LogTransform.Trim().ToLower() == "yes")
                 {
                     backfData = _process.BackLogTransform(result.PredictionValues);
                     backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                    backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
+
                     backData = _process.BackLogTransform(ActualValues.Test);
                 }
                 else
                 {
                     backfData = result.PredictionValues;
                     backfData2 = result.PredictionValues2;
+                    backfData3 = result.PreditionValuesAverage;
+
                     backData = ActualValues.Test;
                 }
                 var errorParam = new ErrorEvaluate
@@ -133,34 +141,44 @@ public class BenchmarkController : Controller
                     ForecastValues = backfData2
                 };
 
+
+                var errorParam3 = new ErrorEvaluate
+                {
+                    ActualValues = backData,
+                    ForecastValues = backfData3
+                };
+
+
                 error1 = _error.EvaluateAlgoErrors(errorParam);
                 error2 = _error.EvaluateAlgoErrors(errorParam2);
+                error3 = _error.EvaluateAlgoErrors(errorParam3);
+
             }
 
             else
                 return NotFound("404!");
 
-
-            if (input == "yes")
+            if (input == "hwes" || input == "ses" && input != "gas")
             {
-                backfData = _process.BackLogTransform(result.PredictionValues);
-                backfData2 = _process.BackLogTransform(result.PredictionValues2);
-                backData = _process.BackLogTransform(ActualValues.Test);
+                if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                {
+                    backfData = _process.BackLogTransform(result.PredictionValues);
+                    backData = _process.BackLogTransform(ActualValues.Test);
+                }
+                else
+                {
+                    backfData = result.PredictionValues;
+                    backData = ActualValues.Test;
+                }
+
+                var errorParams = new ErrorEvaluate
+                {
+                    ActualValues = backfData,
+                    ForecastValues = backData
+                };
+
+                error1 = _error.EvaluateAlgoErrors(errorParams);
             }
-            else
-            {
-                backfData = result.PredictionValues;
-                backfData2 = result.PredictionValues2;
-                backData = ActualValues.Test;
-            }
-
-            var errorParams = new ErrorEvaluate
-            {
-                ActualValues = backData,
-                ForecastValues = backfData
-            };
-
-            error1 = _error.EvaluateAlgoErrors(errorParams);
 
             var algoOutput = new ALgoOutput
             {
@@ -195,7 +213,8 @@ public class BenchmarkController : Controller
             return Ok(new
             {
                 algoOutput,
-                errorOutput
+                errorOutput,
+                error3
             });
         }
         catch (Exception ex)

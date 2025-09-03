@@ -19,6 +19,7 @@ public class ALgoOutput
     public List<decimal> PredictionValues { get; set; } = new();
     public string TimeComputed { get; set; } = string.Empty;
     public List<decimal> PredictionValues2 { get; set; } = new();
+    public List<decimal> PreditionValuesAverage { get; set; } = new();
     public DateTime DatePredicted { get; set; }
 }
 
