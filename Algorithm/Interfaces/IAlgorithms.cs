@@ -40,7 +40,7 @@ public interface IProcessing
     List<decimal> BackLogTransform(List<decimal> LogValues);
 }
 
-public interface IGAS
+public interface ISortPredictions
 {
-
+    PredictionsResult SortForecast(PredictionsResult predictions);
 }

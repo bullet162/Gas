@@ -15,6 +15,8 @@ public class BenchmarkController : Controller
 {
 
     private readonly IGetData _get;
+    private readonly IGetForecastValues _getf;
+    private readonly IGetError _getErr;
     private ISes _ses;
     private IHwes _hwes;
     private IMtGas _gas;
@@ -24,7 +26,9 @@ public class BenchmarkController : Controller
     private ITrainTest _TrainTest;
     private ISearch _search;
     public BenchmarkController
-    (ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas, IError error, IProcessing processing, ISaveData save, ISearch search)
+    (ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas,
+    IError error, IProcessing processing, ISaveData save, ISearch search,
+    IGetForecastValues getF, IGetError getError)
     {
         _TrainTest = trainTest;
         _get = get;
@@ -35,6 +39,8 @@ public class BenchmarkController : Controller
         _process = processing;
         _save = save;
         _search = search;
+        _getf = getF;
+        _getErr = getError;
     }
 
     [HttpPost("forecast")]
@@ -42,13 +48,40 @@ public class BenchmarkController : Controller
     {
         try
         {
+            var errorOutput = new ErrorOutput();
+            var algoOutput = new ALgoOutput();
+
             if (benchmark.ColumnName == null)
                 return BadRequest("Column name of actual values required!");
 
             var data = await _get.ActualValues(benchmark.ColumnName);
 
+            bool isLogTransformed = false;
+            if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                isLogTransformed = true;
+            else
+                isLogTransformed = false;
+
+            var exFData = await _getf.GetForecastValuesByColumnName(benchmark.ColumnName, isLogTransformed);
+
+            if (benchmark.AlgoType.Trim().ToLower() == exFData.AlgoType.Trim().ToLower() && exFData.ColumnName.Trim().ToLower() == benchmark.ColumnName.Trim().ToLower())
+            {
+                algoOutput = exFData;
+                errorOutput = await _getErr.GetErrorOutputsById(exFData.Id);
+                return Ok(new
+                {
+                    algoOutput,
+                    errorOutput
+                });
+            }
+
             if (data.ActualValues == null || data.ActualValues.Count == 0)
                 return NotFound("No data found with that column name...");
+
+            if (data.ActualValues.Count > 1001)
+            {
+                data.ActualValues = data.ActualValues.TakeLast(800).ToList();
+            }
 
             List<decimal> LogValues = new();
 
@@ -62,7 +95,6 @@ public class BenchmarkController : Controller
             var error1 = new ErrorOutput();
             var error2 = new ErrorOutput();
             var error3 = new ErrorOutput();
-
 
             var seasonLength = ActualValues.Train.Count / 10;
 
@@ -109,7 +141,7 @@ public class BenchmarkController : Controller
             else if (input == "hwes")
                 result = _hwes.TrainForecast(hwesParams);
 
-            else if (input == "oldgas")
+            else if (input == "gas")
             {
                 result = _gas.ApplyMtGas(hwesParams, gasParams);
 
@@ -152,7 +184,6 @@ public class BenchmarkController : Controller
                 error1 = _error.EvaluateAlgoErrors(errorParam);
                 error2 = _error.EvaluateAlgoErrors(errorParam2);
                 error3 = _error.EvaluateAlgoErrors(errorParam3);
-
             }
 
             else
@@ -180,20 +211,24 @@ public class BenchmarkController : Controller
                 error1 = _error.EvaluateAlgoErrors(errorParams);
             }
 
-            var algoOutput = new ALgoOutput
+            algoOutput = new ALgoOutput
             {
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
+                ForecastValues = backData,
                 PredictionValues = backfData,
                 PredictionValues2 = backfData2,
+                PreditionValuesAverage = backfData3,
                 AlphaSes = result.AlphaSes,
                 AlphaHwes = result.AlphaHwes,
                 Beta = result.Beta,
                 TimeComputed = result.TimeComputed,
-                SeasonLength = result.SeasonLength
+                SeasonLength = result.SeasonLength,
+                DatePredicted = DateTime.Now,
+                IsLogTransformed = isLogTransformed
             };
 
-            var errorOutput = new ErrorOutput
+            errorOutput = new ErrorOutput
             {
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
@@ -204,17 +239,20 @@ public class BenchmarkController : Controller
                 MAE2 = error2.MAE,
                 MSE2 = error2.MSE,
                 MAPE2 = error2.MAPE,
-                RMSE2 = error2.RMSE
+                RMSE2 = error2.RMSE,
+                MAE3 = error3.MAE,
+                MSE3 = error3.MSE,
+                MAPE3 = error3.MAPE,
+                RMSE3 = error3.RMSE,
             };
 
-            // await _save.SaveDatas(algoOutput);
-            // await _save.SaveErrorData(errorOutput);
+            await _save.SaveDatas(algoOutput);
+            await _save.SaveErrorData(errorOutput);
 
             return Ok(new
             {
                 algoOutput,
-                errorOutput,
-                error3
+                errorOutput
             });
         }
         catch (Exception ex)

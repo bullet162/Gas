@@ -1,0 +1,209 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ForecastingGas.Algorithm.Interfaces;
+using ForecastingGas.Dto.Requests;
+using ForecastingGas.Dto.Responses;
+using ForecastingGas.Utils.Interfaces;
+
+namespace ForecastingGas.Algorithm.Hwes
+{
+    public class AdditiveHwes : IHwes
+    {
+        private int _seasonLength;
+        private IWatch _watch;
+        
+        public AdditiveHwes(IWatch watch)
+        {
+            _watch = watch;
+        }
+
+        public ALgoOutput TrainForecast(HwesParams hwesParams)
+        {
+            _watch.StartWatch();
+            List<decimal> _level = new List<decimal>();
+            List<decimal> _trend = new List<decimal>();
+            List<decimal> _seasonal = new List<decimal>();
+
+            _seasonLength = hwesParams.SeasonLength;
+            var data = hwesParams.ActualValues;
+
+            if (data.Count < 2 * _seasonLength)
+            {
+                throw new ArgumentOutOfRangeException(
+                    $"Need at least {2 * _seasonLength} data points for seasonLength {_seasonLength}, " +
+                    $"but only {data.Count} were provided.");
+            }
+
+            // IMPROVED INITIALIZATION FOR NON-STATIONARY DATA
+            
+            // 1. Calculate initial trend using linear regression on first two seasons
+            var initialTrend = CalculateInitialTrend(data, _seasonLength);
+            
+            // 2. Calculate initial level (adjusted for trend)
+            var initialLevel = CalculateInitialLevel(data, _seasonLength, initialTrend);
+            
+            // 3. Calculate initial seasonal components (de-trended)
+            _seasonal = CalculateInitialSeasonalComponents(data, _seasonLength, initialLevel, initialTrend);
+
+            // Initialize level and trend arrays
+            for (int i = 0; i < _seasonLength; i++)
+            {
+                _level.Add(initialLevel + initialTrend * i);
+                _trend.Add(initialTrend);
+            }
+
+            // Initialize forecast values
+            hwesParams.ForecastValues = new List<decimal>();
+            for (int i = 0; i < _seasonLength; i++)
+            {
+                hwesParams.ForecastValues.Add(0.0m);
+            }
+
+            // Main HWES algorithm
+            var alpha = hwesParams.Alpha;
+            var beta = hwesParams.Beta;
+            var gamma = hwesParams.Gamma;
+
+            for (int i = _seasonLength; i < data.Count; i++)
+            {
+                int seasonIndex = i % _seasonLength;
+                int prevSeasonIndex = (i - _seasonLength) % _seasonLength;
+
+                // Update level, trend, and seasonal components
+                decimal prevLevel = _level[i - 1];
+                decimal prevTrend = _trend[i - 1];
+                decimal prevSeasonal = _seasonal[prevSeasonIndex];
+
+                decimal newLevel = alpha * (data[i] - prevSeasonal) + (1 - alpha) * (prevLevel + prevTrend);
+                decimal newTrend = beta * (newLevel - prevLevel) + (1 - beta) * prevTrend;
+                decimal newSeasonal = gamma * (data[i] - newLevel) + (1 - gamma) * prevSeasonal;
+
+                _level.Add(newLevel);
+                _trend.Add(newTrend);
+                
+                // Update the seasonal component for this position
+                if (seasonIndex < _seasonal.Count)
+                {
+                    _seasonal[seasonIndex] = newSeasonal;
+                }
+                else
+                {
+                    _seasonal.Add(newSeasonal);
+                }
+
+                // Generate forecast for next period
+                int forecastSeasonIndex = (i + 1) % _seasonLength;
+                decimal forecast = _level[i] + _trend[i] + _seasonal[forecastSeasonIndex];
+                hwesParams.ForecastValues.Add(forecast);
+            }
+
+            // Generate additional forecasts if requested
+            if (hwesParams.AddPrediction.Trim().ToLower() == "yes")
+                hwesParams.PredictionValues = GenerateForecasts(hwesParams, _level, _trend, _seasonal);
+            
+            var time = _watch.StopWatch();
+            
+            var results = new ALgoOutput
+            {
+                ForecastValues = hwesParams.ForecastValues,
+                ActualValues = hwesParams.ActualValues,
+                TotalCount = hwesParams.ActualValues.Count,
+                AlgoType = "HWES",
+                LevelValues = _level,
+                TrendValues = _trend,
+                SeasonalValues = _seasonal,
+                SeasonLength = _seasonLength,
+                PredictionValues = hwesParams.PredictionValues,
+                TimeComputed = time,
+                AlphaHwes = hwesParams.Alpha,
+                Beta = hwesParams.Beta,
+                Gamma = hwesParams.Gamma
+            };
+
+            return results;
+        }
+
+        private decimal CalculateInitialTrend(List<decimal> data, int seasonLength)
+        {
+            // Use linear regression on the first two seasons to estimate initial trend
+            decimal sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            int n = seasonLength * 2;
+            
+            for (int i = 0; i < n; i++)
+            {
+                sumX += i;
+                sumY += data[i];
+                sumXY += i * data[i];
+                sumXX += i * i;
+            }
+            
+            decimal denominator = n * sumXX - sumX * sumX;
+            if (denominator == 0) return 0;
+            
+            return (n * sumXY - sumX * sumY) / denominator;
+        }
+
+        private decimal CalculateInitialLevel(List<decimal> data, int seasonLength, decimal trend)
+        {
+            // Calculate level adjusted for trend
+            decimal sum = 0;
+            for (int i = 0; i < seasonLength; i++)
+            {
+                sum += data[i] - trend * i;
+            }
+            return sum / seasonLength;
+        }
+
+        private List<decimal> CalculateInitialSeasonalComponents(List<decimal> data, int seasonLength, decimal level, decimal trend)
+        {
+            // Calculate seasonal components by de-trending the data
+            var seasonal = new List<decimal>();
+            
+            for (int i = 0; i < seasonLength; i++)
+            {
+                decimal sum = 0;
+                int count = 0;
+                
+                // Average across all available seasons
+                for (int j = i; j < data.Count; j += seasonLength)
+                {
+                    sum += data[j] - (level + trend * j);
+                    count++;
+                }
+                
+                seasonal.Add(count > 0 ? sum / count : 0);
+            }
+            
+            // Normalize seasonal components to sum to zero (for additive model)
+            decimal seasonalSum = seasonal.Sum();
+            decimal seasonalAdjustment = seasonalSum / seasonLength;
+            
+            for (int i = 0; i < seasonLength; i++)
+            {
+                seasonal[i] -= seasonalAdjustment;
+            }
+            
+            return seasonal;
+        }
+
+        public List<decimal> GenerateForecasts(HwesParams hwesParams, List<decimal> level, List<decimal> trend, List<decimal> seasonal)
+        {
+            var horizon = hwesParams.ForecasHorizon;
+            var forecasts = new List<decimal>();
+            
+            int lastIndex = level.Count - 1;
+            decimal lastLevel = level[lastIndex];
+            decimal lastTrend = trend[lastIndex];
+            
+            for (int i = 1; i <= horizon; i++)
+            {
+                int seasonIndex = (lastIndex + i) % seasonal.Count;
+                decimal forecast = lastLevel + i * lastTrend + seasonal[seasonIndex];
+                forecasts.Add(forecast);
+            }
+            
+            return forecasts;
+        }
+    }
+}

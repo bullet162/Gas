@@ -49,6 +49,7 @@ public class MTGas : IMtGas
 
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
+
         _watch.StartWatch();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
@@ -60,6 +61,7 @@ public class MTGas : IMtGas
         decimal alphaSes = new(); ;
         const string model = "GAS";
         var newHwesParams = new HwesParams();
+
         int windowSize = hwesParams.ActualValues.Count / 2;
         hwesParams.SeasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
@@ -92,10 +94,11 @@ public class MTGas : IMtGas
             };
 
             var copyData = windowedData.ToList();
+            alphaSes = _search.GenerateOptimalAlpha(windowedData);
             var newSesParams = new SesParams
             {
                 ActualValues = copyData,
-                Alpha = new decimal()
+                Alpha = alphaSes
             };
 
             (List<decimal> forecast, decimal alpha) forecastSes = default;
@@ -165,8 +168,8 @@ public class MTGas : IMtGas
                 PredictionValues = hwesParams.PredictionValues,
             };
 
-            GasPrediction = _hwes.GenerateForecasts(newHwesParams);
-
+            List<decimal> pred1 = _hwes.GenerateForecasts(newHwesParams);
+            GasPrediction.AddRange(pred1);
 
             for (int i = 0; i < hwesParams.ForecasHorizon; i++)
             {
@@ -184,8 +187,8 @@ public class MTGas : IMtGas
         }
 
         var averaged = GasPrediction
-    .Zip(GasPrediction2, (a, b) => (a + b) / 2)
-    .ToList();
+            .Zip(GasPrediction2, (a, b) => (a + b) / 2)
+            .ToList();
 
 
         var timeComputed = _watch.StopWatch();
@@ -210,7 +213,4 @@ public class MTGas : IMtGas
             PreditionValuesAverage = averaged
         };
     }
-
-    // private List<decimal> 
-
 }

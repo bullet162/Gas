@@ -23,14 +23,14 @@ public class Data : IGetData
             ColumnName = x.ColumnName,
             TotalCount = x.TotalCount,
             DateOfEntry = x.DateUploaded,
-            ActualValues = new List<decimal>()
+            ActualValues = x.ActualValues.Select(x => x.ActualValue).ToList()
         })
         .OrderBy(x => x.DateOfEntry)
         .ThenBy(x => x.Id)
         .ToListAsync();
 
         if (result == null || !result.Any())
-            throw new ArgumentNullException("No Data found in the database.");
+            return new List<RawDataOutput>();
 
         return result;
     }

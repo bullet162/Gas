@@ -6,5 +6,5 @@ namespace ForecastingGas.Data.Repositories.Interfaces;
 public interface IGetForecastValues
 {
     Task<List<GetForecast>> GetForecastDescriptions();
-    Task<ALgoOutput> GetForecastValuesByColumnName(string columnName);
+    Task<ALgoOutput> GetForecastValuesByColumnName(string columnName, bool isLogTransformed);
 }

@@ -12,13 +12,13 @@ public class DeleteData : IDeleteData
         _Db = db;
     }
 
-    public async Task<bool> DeleteDataByColumnName(string columnName)
+    public async Task<bool> DeleteDataById(int id)
     {
 
-        if (string.IsNullOrWhiteSpace(columnName))
+        if (id <= 0)
             throw new ArgumentNullException("Input is required!");
 
-        var result = await _Db.GetDataDescriptions.FindAsync(columnName);
+        var result = await _Db.GetDataDescriptions.FirstAsync(x => x.Id == id);
 
         if (result == null)
             return false;

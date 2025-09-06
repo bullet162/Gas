@@ -62,7 +62,7 @@ public class GridSearch : ISearch
     public (decimal alpha, decimal beta, decimal gamma, decimal mse, List<decimal> forecast) GridSearchHWES(
     List<decimal> actualData,
     int seasonLength,
-    int steps = 20)
+    int steps = 10)
     {
         // Create the grid of candidate parameters
         decimal stepSize = 1.0M / steps;

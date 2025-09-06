@@ -14,4 +14,3 @@ public interface IModel
     (decimal weightSes, decimal weightHwes) CalculateWeights(decimal mseSes, decimal mseHwes);
     List<decimal> GasWeightedForecast(List<decimal> fSes, List<decimal> fHwes, decimal weightSes, decimal weightHwes);
 }
-

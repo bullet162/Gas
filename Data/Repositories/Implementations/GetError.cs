@@ -30,7 +30,15 @@ public class GetError : IGetError
             MAE = errorData.MAE,
             MSE = errorData.MSE,
             MAPE = errorData.MAPE,
-            RMSE = errorData.RMSE
+            RMSE = errorData.RMSE,
+            MAE2 = errorData.MAE2,
+            MSE2 = errorData.MSE2,
+            MAPE2 = errorData.MAPE2,
+            RMSE2 = errorData.RMSE2,
+            MAE3 = errorData.MAE3,
+            MSE3 = errorData.MSE3,
+            MAPE3 = errorData.MAPE3,
+            RMSE3 = errorData.RMSE3
         };
 
         return result;

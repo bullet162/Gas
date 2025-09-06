@@ -34,4 +34,15 @@ public class ErrorValues
     [Column(TypeName = "decimal(18,9)")]
     public decimal MSE2 { get; set; }
 
+    public double RMSE3 { get; set; }
+
+    [Column(TypeName = "decimal(18,9)")]
+    public decimal MAE3 { get; set; }
+
+    [Column(TypeName = "decimal(18,9)")]
+    public decimal MAPE3 { get; set; }
+
+    [Column(TypeName = "decimal(18,9)")]
+    public decimal MSE3 { get; set; }
+
 }

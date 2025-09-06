@@ -41,7 +41,7 @@ builder.Services.AddScoped<ITrainTest, TrainTest>();
 builder.Services.AddScoped<IDeleteData, DeleteData>();
 builder.Services.AddScoped<IWatch, Watch>();
 builder.Services.AddScoped<IProcessing, Processing>();
-
+builder.Services.AddScoped<ISortPredictions, SortPredictions>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

@@ -7,6 +7,7 @@ public class ALgoOutput
     public List<decimal> ActualValues { get; set; } = new();
     public string ColumnName { get; set; } = string.Empty;
     public int TotalCount { get; set; } = new();
+    public bool IsLogTransformed { get; set; }
     public string AlgoType { get; set; } = string.Empty;
     public List<decimal> LevelValues { get; set; } = new();
     public List<decimal> TrendValues { get; set; } = new();
@@ -44,4 +45,18 @@ public class ErrorOutput
     public decimal MAE2 { get; set; }
     public decimal MAPE2 { get; set; }
     public decimal MSE2 { get; set; }
+    public double RMSE3 { get; set; }
+    public decimal MAE3 { get; set; }
+    public decimal MAPE3 { get; set; }
+    public decimal MSE3 { get; set; }
+}
+
+public class PredictionsResult
+{
+    public List<decimal> MinPrediction { get; set; } = new();
+
+    public List<decimal> MaxPrediction { get; set; } = new();
+
+    public List<decimal> AveragePrediction { get; set; } = new();
+
 }

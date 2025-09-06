@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
   public DbSet<ForecastValues> GetForecastValues { get; set; }
   public DbSet<PredictionValues> GetPredictionValues { get; set; }
   public DbSet<PredictionValues2> GetPredictionValues2 { get; set; }
+  public DbSet<PredictionValues3> GetPredictionValues3 { get; set; }
+
 
   public DbSet<ErrorValues> GetErrorValues { get; set; }
 
@@ -41,11 +43,21 @@ public class AppDbContext : DbContext
     .HasForeignKey(p => p.ForecastDescriptionID2)
     .OnDelete(DeleteBehavior.Cascade);
 
-
     modelBuilder.Entity<PredictionValues2>()
         .HasOne(p => p.GetForecastDescription3)
         .WithMany(fd => fd.GetPredictionValues2)
         .HasForeignKey(p => p.ForecastDescriptionID3)
         .OnDelete(DeleteBehavior.Cascade);
+
+    modelBuilder.Entity<PredictionValues3>()
+       .HasOne(p => p.GetForecastDescription3)
+       .WithMany(fd => fd.GetPredictionValues3)
+       .HasForeignKey(p => p.ForecastDescriptionID4)
+       .OnDelete(DeleteBehavior.Cascade);
+
+    modelBuilder.Entity<ForecastDescription>()
+      .Property(f => f.isLogTransformed)
+      .HasColumnType("bit");
+
   }
 }

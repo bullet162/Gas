@@ -35,40 +35,46 @@ public class GetForecastValues : IGetForecastValues
         return result;
     }
 
-    public async Task<ALgoOutput> GetForecastValuesByColumnName(string columnName)
+    public async Task<ALgoOutput> GetForecastValuesByColumnName(string columnName, bool isLogTransformed)
     {
-        var result = await _DBContext.GetForecastValues
-            .Include(x => x.GetForecastDescription)
-            .ThenInclude(d => d.GetForecastValues.OrderBy(fv => fv.Id))
-            .Include(x => x.GetForecastDescription)
-            .ThenInclude(d => d.GetPredictionValues.OrderBy(pv => pv.Id))
-            .Include(x => x.GetForecastDescription)
-            .ThenInclude(d => d.GetPredictionValues2.OrderBy(cv => cv.Id))
-            .FirstOrDefaultAsync(x => x.GetForecastDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower());
+        var forecast = await _DBContext.GetForecastDescriptions
+     .Where(d => d.isLogTransformed == isLogTransformed &&
+                 d.ColumnName.ToLower() == columnName.ToLower())
+     .FirstOrDefaultAsync();
 
-        if (result == null) return null!;
+        if (forecast == null) return null!;
 
         var algoOutput = new ALgoOutput
         {
-            ForecastValues = result.GetForecastDescription.GetForecastValues
-                .OrderBy(x => x.Id)
-                .Select(x => x.ForecastValue).ToList(),
-
-            PredictionValues = result.GetForecastDescription.GetPredictionValues
-                .OrderBy(x => x.Id)
-                .Select(x => x.PredictionValue).ToList(),
-
-            PredictionValues2 = result.GetForecastDescription.GetPredictionValues2
-                .OrderBy(x => x.Id)
-                .Select(x => x.PredictionValue2).ToList(),
-
-            AlgoType = result.GetForecastDescription.AlgoType,
-            SeasonLength = result.GetForecastDescription.SeasonLength,
-            DatePredicted = result.GetForecastDescription.ForecastDate,
-            ColumnName = result.GetForecastDescription.ColumnName,
-            TotalCount = result.GetForecastDescription.TotalCount,
-            TimeComputed = result.GetForecastDescription.TimeComputed
+            AlgoType = forecast.AlgoType,
+            ColumnName = forecast.ColumnName,
+            AlphaSes = (decimal)forecast.AlphaSes,
+            AlphaHwes = (decimal)forecast.AlphaHwes,
+            Beta = (decimal)forecast.Beta,
+            Gamma = (decimal)forecast.Gamma,
+            Id = forecast.Id,
+            IsLogTransformed = forecast.isLogTransformed
         };
+
+
+        algoOutput.PredictionValues = await _DBContext.GetPredictionValues
+            .Where(pv => pv.ForecastDescriptionID2 == forecast.Id)
+            .OrderBy(pv => pv.Id)
+            .Select(pv => pv.PredictionValue)
+            .ToListAsync();
+
+
+        algoOutput.PredictionValues2 = await _DBContext.GetPredictionValues2
+                .Where(pv => pv.ForecastDescriptionID3 == forecast.Id)
+                .OrderBy(pv => pv.Id)
+                .Select(pv => pv.PredictionValue2)
+                .ToListAsync();
+
+        algoOutput.PreditionValuesAverage = await _DBContext.GetPredictionValues3
+            .Where(pv => pv.ForecastDescriptionID4 == forecast.Id)
+            .OrderBy(pv => pv.Id)
+            .Select(pv => pv.PredictionValue3)
+            .ToListAsync();
 
         return algoOutput;
     }

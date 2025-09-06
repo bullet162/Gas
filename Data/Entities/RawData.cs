@@ -20,7 +20,7 @@ public class ActualValues
     [Key]
     public int Id { get; set; }
 
-    [Column(TypeName = "decimal(18,9)")]
+    [Column(TypeName = "decimal(38,9)")]
     public decimal ActualValue { get; set; }
     public int DataDescriptionID { get; set; }
     public DataDescription GetDataDescription { get; set; } = null!;

@@ -37,6 +37,11 @@ public class SaveData : ISaveData
             {
                 PredictionValue2 = x
             }).ToList(),
+            GetPredictionValues3 = output.PreditionValuesAverage
+            .Select(x => new PredictionValues3
+            {
+                PredictionValue3 = x
+            }).ToList(),
             TimeComputed = output.TimeComputed,
             AlphaSes = (double)output.AlphaSes,
             AlphaHwes = (double)output.AlphaHwes,

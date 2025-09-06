@@ -16,14 +16,17 @@ public class GasForecast : ControllerBase
     private ISaveData _saveData;
     private IMtGas _gasForecastAlgorithm;
     private ITrainTest _traintest;
+    private ISortPredictions _sort;
 
-    public GasForecast(IGetData getData, ISaveData saveData, IMtGas gasForecastAlgorithm, ITrainTest trainTest, IGetForecastValues getF)
+    public GasForecast
+    (IGetData getData, ISaveData saveData, IMtGas gasForecastAlgorithm, ITrainTest trainTest, IGetForecastValues getF, ISortPredictions sort)
     {
         _getData = getData;
         _saveData = saveData;
         _gasForecastAlgorithm = gasForecastAlgorithm;
         _traintest = trainTest;
         _getF = getF;
+        _sort = sort;
     }
 
     [HttpPost("gas")]
@@ -42,17 +45,14 @@ public class GasForecast : ControllerBase
             if (!string.IsNullOrWhiteSpace(check))
                 return Conflict(new { message = "Forecast for this dataset already exists." });
 
-            var inputLog = input.LogTransform.Trim().ToLower();
-
             List<decimal> actualData = new();
 
-            if (inputLog == "yes")
-                actualData = _traintest.Cut(data.ActualValues);
-            else
-                actualData = data.ActualValues;
+            actualData = _traintest.Cut(data.ActualValues);
 
             if (actualData == null || actualData.Count == 0)
                 return BadRequest("No actual values found for the requested Id.");
+
+            var remain = data.ActualValues.Skip(actualData.Count).ToList();
 
             var hwesParameters = new HwesParams
             {
@@ -60,7 +60,7 @@ public class GasForecast : ControllerBase
                 Alpha = new decimal(),
                 Beta = new decimal(),
                 Gamma = new decimal(),
-                ForecasHorizon = data.ActualValues.Count * (int)0.25,
+                ForecasHorizon = remain.Count,
                 ForecastValues = new List<decimal>(),
                 LevelValues = new List<decimal>(),
                 TrendValues = new List<decimal>(),
@@ -94,12 +94,22 @@ public class GasForecast : ControllerBase
                 Gamma = result.Gamma
             };
 
-            await _saveData.SaveDatas(saveResult);
+            // await _saveData.SaveDatas(saveResult);
+            var unsortedPredictions = new PredictionsResult
+            {
+                MinPrediction = result.PredictionValues,
+                MaxPrediction = result.PredictionValues2
+            };
+
+            var sortIt = _sort.SortForecast(unsortedPredictions);
+
 
             return Ok(new
             {
-                prediction1 = result.PredictionValues,
-                prediction2 = result.PredictionValues2,
+                sortIt,
+                prediction1 = sortIt.MinPrediction.Count,
+                prediction2 = sortIt.MaxPrediction.Count,
+                prediction3 = sortIt.AveragePrediction.Count
             });
         }
         catch (Exception ex)

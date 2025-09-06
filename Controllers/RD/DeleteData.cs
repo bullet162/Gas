@@ -21,7 +21,10 @@ public class DeleteData : ControllerBase
         {
             var result = await _deleteData.DeleteAllData();
 
-            return Ok(result);
+            return Ok(new
+            {
+                response = $"Successfully deleted all data. {result}"
+            });
         }
         catch (Exception ex)
         {
@@ -30,13 +33,16 @@ public class DeleteData : ControllerBase
     }
 
     [HttpDelete("ActualDataByColumnName")]
-    public async Task<IActionResult> DeleteDataByColumnName(string columnName)
+    public async Task<IActionResult> DeleteDataById(int id)
     {
         try
         {
-            var result = await _deleteData.DeleteDataByColumnName(columnName);
+            var result = await _deleteData.DeleteDataById(id);
 
-            return Ok(result);
+            return Ok(new
+            {
+                response = result
+            });
         }
         catch (Exception ex)
         {

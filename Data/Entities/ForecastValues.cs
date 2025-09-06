@@ -7,7 +7,7 @@ public class ForecastDescription
 {
     [Key]
     public int Id { get; set; }
-
+    public bool isLogTransformed { get; set; }
     public string AlgoType { get; set; } = string.Empty;
     public string ColumnName { get; set; } = string.Empty;
     public DateTime ForecastDate { get; set; } = DateTime.Today;
@@ -19,6 +19,8 @@ public class ForecastDescription
     public List<ForecastValues> GetForecastValues { get; set; } = null!;
     public List<PredictionValues> GetPredictionValues { get; set; } = null!;
     public List<PredictionValues2> GetPredictionValues2 { get; set; } = null!;
+    public List<PredictionValues3> GetPredictionValues3 { get; set; } = null!;
+
     public int SeasonLength { get; set; } = new();
     public string TimeComputed { get; set; } = string.Empty;
 }
@@ -58,5 +60,18 @@ public class PredictionValues2
 
     [ForeignKey("ForecastDescription")]
     public int ForecastDescriptionID3 { get; set; }
+    public ForecastDescription GetForecastDescription3 { get; set; } = null!;
+}
+
+public class PredictionValues3
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Column(TypeName = "decimal(18,9)")]
+    public decimal PredictionValue3 { get; set; }
+
+    [ForeignKey("ForecastDescription")]
+    public int ForecastDescriptionID4 { get; set; }
     public ForecastDescription GetForecastDescription3 { get; set; } = null!;
 }

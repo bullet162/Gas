@@ -4,6 +4,7 @@ using ForecastingGas.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace forecastingGas.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250906043016_updated decimal length")]
+    partial class updateddecimallength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,7 +34,7 @@ namespace forecastingGas.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("ActualValue")
-                        .HasColumnType("decimal(38,9)");
+                        .HasColumnType("decimal(18,9)");
 
                     b.Property<int>("DataDescriptionID")
                         .HasColumnType("int");
@@ -187,7 +190,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("ForecastValue")
-                        .HasColumnType("decimal(18,9)");
+                        .HasColumnType("decimal(38,9)");
 
                     b.HasKey("Id");
 
@@ -208,7 +211,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PredictionValue")
-                        .HasColumnType("decimal(18,9)");
+                        .HasColumnType("decimal(38,9)");
 
                     b.HasKey("Id");
 
@@ -229,7 +232,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PredictionValue2")
-                        .HasColumnType("decimal(18,9)");
+                        .HasColumnType("decimal(38,9)");
 
                     b.HasKey("Id");
 
@@ -250,7 +253,7 @@ namespace forecastingGas.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PredictionValue3")
-                        .HasColumnType("decimal(18,9)");
+                        .HasColumnType("decimal(38,9)");
 
                     b.HasKey("Id");
 
