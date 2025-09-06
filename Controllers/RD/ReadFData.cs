@@ -33,14 +33,14 @@ public class ReadForecast : ControllerBase
     }
 
     [HttpGet("ForecastValuesByColumnName")]
-    public async Task<IActionResult> GetFActualValues([FromQuery] string columnName, [FromQuery] bool isLogTransformed)
+    public async Task<IActionResult> GetFActualValues([FromQuery] string columnName, [FromQuery] bool isLogTransformed, [FromQuery] string AlgoType)
     {
         try
         {
             if (columnName == null)
                 return BadRequest("Invalid column name provided.");
 
-            var result = await _get.GetForecastValuesByColumnName(columnName, isLogTransformed);
+            var result = await _get.GetForecastValuesByColumnName(columnName, isLogTransformed, AlgoType);
 
             if (result == null)
                 return NotFound("No records found!");

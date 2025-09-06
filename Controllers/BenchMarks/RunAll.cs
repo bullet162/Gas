@@ -62,198 +62,203 @@ public class BenchmarkController : Controller
             else
                 isLogTransformed = false;
 
-            var exFData = await _getf.GetForecastValuesByColumnName(benchmark.ColumnName, isLogTransformed);
+            var exFData = await _getf.GetForecastValuesByColumnName(benchmark.ColumnName, isLogTransformed, benchmark.AlgoType);
 
-            if (benchmark.AlgoType.Trim().ToLower() == exFData.AlgoType.Trim().ToLower() && exFData.ColumnName.Trim().ToLower() == benchmark.ColumnName.Trim().ToLower())
+            if (exFData != null
+                && exFData.AlgoType.Trim().ToLower() == benchmark.AlgoType.Trim().ToLower()
+                && exFData.ColumnName.Trim().ToLower() == benchmark.ColumnName.Trim().ToLower()
+                && exFData.IsLogTransformed == isLogTransformed)
             {
+                // Already exists → just return
                 algoOutput = exFData;
                 errorOutput = await _getErr.GetErrorOutputsById(exFData.Id);
+                return Ok(new { algoOutput, errorOutput });
+            }
+            else
+            {
+
+                if (data.ActualValues == null || data.ActualValues.Count == 0)
+                    return NotFound("No data found with that column name...");
+
+                if (data.ActualValues.Count > 1001)
+                {
+                    data.ActualValues = data.ActualValues.TakeLast(800).ToList();
+                }
+
+                List<decimal> LogValues = new();
+
+                if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                    LogValues = _process.LogTransformation(data.ActualValues);
+                else
+                    LogValues = data.ActualValues;
+
+                var ActualValues = _TrainTest.SplitDataTwo(LogValues);
+
+                var error1 = new ErrorOutput();
+                var error2 = new ErrorOutput();
+                var error3 = new ErrorOutput();
+
+                var seasonLength = ActualValues.Train.Count / 10;
+
+                var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
+
+                var hwesParams = new HwesParams
+                {
+                    Alpha = optimizedHwes.alpha,
+                    Beta = optimizedHwes.beta,
+                    Gamma = optimizedHwes.gamma,
+                    SeasonLength = seasonLength,
+                    ActualValues = ActualValues.Train,
+                    ForecasHorizon = ActualValues.Test.Count,
+                    SeasonalValues = new List<decimal>(),
+                    TrendValues = new List<decimal>(),
+                    LevelValues = new List<decimal>(),
+                    PredictionValues = new List<decimal>(),
+                    AddPrediction = "yes"
+                };
+
+                var gasParams = new GasRequest
+                {
+                    ColumnName = data.ColumnName,
+                    AddPrediction = "yes"
+                };
+
+
+                var result = new ALgoOutput();
+
+                List<decimal> backfData = new();
+                List<decimal> backfData2 = new();
+                List<decimal> backfData3 = new();
+
+                List<decimal> backData = new();
+                var input = benchmark.AlgoType.Trim().ToLower();
+
+
+                if (input == "ses")
+                {
+                    var optimize = _search.GenerateOptimalAlpha(ActualValues.Train);
+                    result = _ses.SesForecast(optimize, ActualValues.Train, ActualValues.Test.Count);
+                }
+
+                else if (input == "hwes")
+                    result = _hwes.TrainForecast(hwesParams);
+
+                else if (input == "gas")
+                {
+                    result = _gas.ApplyMtGas(hwesParams, gasParams);
+
+                    if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                    {
+                        backfData = _process.BackLogTransform(result.PredictionValues);
+                        backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                        backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
+
+                        backData = _process.BackLogTransform(ActualValues.Test);
+                    }
+                    else
+                    {
+                        backfData = result.PredictionValues;
+                        backfData2 = result.PredictionValues2;
+                        backfData3 = result.PreditionValuesAverage;
+
+                        backData = ActualValues.Test;
+                    }
+                    var errorParam = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData
+                    };
+
+                    var errorParam2 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData2
+                    };
+
+
+                    var errorParam3 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData3
+                    };
+
+
+                    error1 = _error.EvaluateAlgoErrors(errorParam);
+                    error2 = _error.EvaluateAlgoErrors(errorParam2);
+                    error3 = _error.EvaluateAlgoErrors(errorParam3);
+                }
+
+                else
+                    return NotFound("404!");
+
+                if (input == "hwes" || input == "ses" && input != "gas")
+                {
+                    if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                    {
+                        backfData = _process.BackLogTransform(result.PredictionValues);
+                        backData = _process.BackLogTransform(ActualValues.Test);
+                    }
+                    else
+                    {
+                        backfData = result.PredictionValues;
+                        backData = ActualValues.Test;
+                    }
+
+                    var errorParams = new ErrorEvaluate
+                    {
+                        ActualValues = backfData,
+                        ForecastValues = backData
+                    };
+
+                    error1 = _error.EvaluateAlgoErrors(errorParams);
+                }
+
+                algoOutput = new ALgoOutput
+                {
+                    AlgoType = result.AlgoType,
+                    ColumnName = data.ColumnName,
+                    ForecastValues = backData,
+                    PredictionValues = backfData,
+                    PredictionValues2 = backfData2,
+                    PreditionValuesAverage = backfData3,
+                    AlphaSes = result.AlphaSes,
+                    AlphaHwes = result.AlphaHwes,
+                    Beta = result.Beta,
+                    TimeComputed = result.TimeComputed,
+                    SeasonLength = result.SeasonLength,
+                    DatePredicted = DateTime.Now,
+                    IsLogTransformed = isLogTransformed,
+                    TotalCount = result.PredictionValues.Count + result.PredictionValues2.Count
+                    + result.PreditionValuesAverage.Count
+                };
+
+                errorOutput = new ErrorOutput
+                {
+                    AlgoType = result.AlgoType,
+                    ColumnName = data.ColumnName,
+                    MAE = error1.MAE,
+                    MSE = error1.MSE,
+                    MAPE = error1.MAPE,
+                    RMSE = error1.RMSE,
+                    MAE2 = error2.MAE,
+                    MSE2 = error2.MSE,
+                    MAPE2 = error2.MAPE,
+                    RMSE2 = error2.RMSE,
+                    MAE3 = error3.MAE,
+                    MSE3 = error3.MSE,
+                    MAPE3 = error3.MAPE,
+                    RMSE3 = error3.RMSE,
+                };
+
+                await _save.SaveDatas(algoOutput);
+                await _save.SaveErrorData(errorOutput);
+
                 return Ok(new
                 {
                     algoOutput,
                     errorOutput
                 });
             }
-
-            if (data.ActualValues == null || data.ActualValues.Count == 0)
-                return NotFound("No data found with that column name...");
-
-            if (data.ActualValues.Count > 1001)
-            {
-                data.ActualValues = data.ActualValues.TakeLast(800).ToList();
-            }
-
-            List<decimal> LogValues = new();
-
-            if (benchmark.LogTransform.Trim().ToLower() == "yes")
-                LogValues = _process.LogTransformation(data.ActualValues);
-            else
-                LogValues = data.ActualValues;
-
-            var ActualValues = _TrainTest.SplitDataTwo(LogValues);
-
-            var error1 = new ErrorOutput();
-            var error2 = new ErrorOutput();
-            var error3 = new ErrorOutput();
-
-            var seasonLength = ActualValues.Train.Count / 10;
-
-            var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
-
-            var hwesParams = new HwesParams
-            {
-                Alpha = optimizedHwes.alpha,
-                Beta = optimizedHwes.beta,
-                Gamma = optimizedHwes.gamma,
-                SeasonLength = seasonLength,
-                ActualValues = ActualValues.Train,
-                ForecasHorizon = ActualValues.Test.Count,
-                SeasonalValues = new List<decimal>(),
-                TrendValues = new List<decimal>(),
-                LevelValues = new List<decimal>(),
-                PredictionValues = new List<decimal>(),
-                AddPrediction = "yes"
-            };
-
-            var gasParams = new GasRequest
-            {
-                ColumnName = data.ColumnName,
-                AddPrediction = "yes"
-            };
-
-
-            var result = new ALgoOutput();
-
-            List<decimal> backfData = new();
-            List<decimal> backfData2 = new();
-            List<decimal> backfData3 = new();
-
-            List<decimal> backData = new();
-            var input = benchmark.AlgoType.Trim().ToLower();
-
-
-            if (input == "ses")
-            {
-                var optimize = _search.GenerateOptimalAlpha(ActualValues.Train);
-                result = _ses.SesForecast(optimize, ActualValues.Train, ActualValues.Test.Count);
-            }
-
-            else if (input == "hwes")
-                result = _hwes.TrainForecast(hwesParams);
-
-            else if (input == "gas")
-            {
-                result = _gas.ApplyMtGas(hwesParams, gasParams);
-
-                if (benchmark.LogTransform.Trim().ToLower() == "yes")
-                {
-                    backfData = _process.BackLogTransform(result.PredictionValues);
-                    backfData2 = _process.BackLogTransform(result.PredictionValues2);
-                    backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
-
-                    backData = _process.BackLogTransform(ActualValues.Test);
-                }
-                else
-                {
-                    backfData = result.PredictionValues;
-                    backfData2 = result.PredictionValues2;
-                    backfData3 = result.PreditionValuesAverage;
-
-                    backData = ActualValues.Test;
-                }
-                var errorParam = new ErrorEvaluate
-                {
-                    ActualValues = backData,
-                    ForecastValues = backfData
-                };
-
-                var errorParam2 = new ErrorEvaluate
-                {
-                    ActualValues = backData,
-                    ForecastValues = backfData2
-                };
-
-
-                var errorParam3 = new ErrorEvaluate
-                {
-                    ActualValues = backData,
-                    ForecastValues = backfData3
-                };
-
-
-                error1 = _error.EvaluateAlgoErrors(errorParam);
-                error2 = _error.EvaluateAlgoErrors(errorParam2);
-                error3 = _error.EvaluateAlgoErrors(errorParam3);
-            }
-
-            else
-                return NotFound("404!");
-
-            if (input == "hwes" || input == "ses" && input != "gas")
-            {
-                if (benchmark.LogTransform.Trim().ToLower() == "yes")
-                {
-                    backfData = _process.BackLogTransform(result.PredictionValues);
-                    backData = _process.BackLogTransform(ActualValues.Test);
-                }
-                else
-                {
-                    backfData = result.PredictionValues;
-                    backData = ActualValues.Test;
-                }
-
-                var errorParams = new ErrorEvaluate
-                {
-                    ActualValues = backfData,
-                    ForecastValues = backData
-                };
-
-                error1 = _error.EvaluateAlgoErrors(errorParams);
-            }
-
-            algoOutput = new ALgoOutput
-            {
-                AlgoType = result.AlgoType,
-                ColumnName = data.ColumnName,
-                ForecastValues = backData,
-                PredictionValues = backfData,
-                PredictionValues2 = backfData2,
-                PreditionValuesAverage = backfData3,
-                AlphaSes = result.AlphaSes,
-                AlphaHwes = result.AlphaHwes,
-                Beta = result.Beta,
-                TimeComputed = result.TimeComputed,
-                SeasonLength = result.SeasonLength,
-                DatePredicted = DateTime.Now,
-                IsLogTransformed = isLogTransformed
-            };
-
-            errorOutput = new ErrorOutput
-            {
-                AlgoType = result.AlgoType,
-                ColumnName = data.ColumnName,
-                MAE = error1.MAE,
-                MSE = error1.MSE,
-                MAPE = error1.MAPE,
-                RMSE = error1.RMSE,
-                MAE2 = error2.MAE,
-                MSE2 = error2.MSE,
-                MAPE2 = error2.MAPE,
-                RMSE2 = error2.RMSE,
-                MAE3 = error3.MAE,
-                MSE3 = error3.MSE,
-                MAPE3 = error3.MAPE,
-                RMSE3 = error3.RMSE,
-            };
-
-            await _save.SaveDatas(algoOutput);
-            await _save.SaveErrorData(errorOutput);
-
-            return Ok(new
-            {
-                algoOutput,
-                errorOutput
-            });
         }
         catch (Exception ex)
         {

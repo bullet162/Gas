@@ -46,8 +46,8 @@ public class SaveData : ISaveData
             AlphaSes = (double)output.AlphaSes,
             AlphaHwes = (double)output.AlphaHwes,
             Beta = (double)output.Beta,
-            Gamma = (double)output.Gamma
-
+            Gamma = (double)output.Gamma,
+            isLogTransformed = output.IsLogTransformed
         };
 
         if (result == null)

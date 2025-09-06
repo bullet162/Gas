@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace forecastingGas.Migrations
 {
     /// <inheritdoc />
-    public partial class initialRefresh : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -42,7 +42,11 @@ namespace forecastingGas.Migrations
                     RMSE2 = table.Column<double>(type: "float", nullable: false),
                     MAE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
                     MAPE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false)
+                    MSE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    RMSE3 = table.Column<double>(type: "float", nullable: false),
+                    MAE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MAPE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MSE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -55,6 +59,7 @@ namespace forecastingGas.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    isLogTransformed = table.Column<bool>(type: "bit", nullable: false),
                     AlgoType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ForecastDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -77,7 +82,7 @@ namespace forecastingGas.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ActualValue = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    ActualValue = table.Column<decimal>(type: "decimal(38,9)", nullable: false),
                     DataDescriptionID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
