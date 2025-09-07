@@ -27,33 +27,6 @@ namespace forecastingGas.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GetErrorValues",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AlgoType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DateEvaluated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RMSE = table.Column<double>(type: "float", nullable: false),
-                    MAE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    RMSE2 = table.Column<double>(type: "float", nullable: false),
-                    MAE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    RMSE3 = table.Column<double>(type: "float", nullable: false),
-                    MAE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GetErrorValues", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "GetForecastDescriptions",
                 columns: table => new
                 {
@@ -92,6 +65,41 @@ namespace forecastingGas.Migrations
                         name: "FK_GetActualValues_GetDataDescriptions_DataDescriptionID",
                         column: x => x.DataDescriptionID,
                         principalTable: "GetDataDescriptions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GetErrorValues",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ForecastDescriptionIdError = table.Column<int>(type: "int", nullable: false),
+                    ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AlgoType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    isLogTransformed = table.Column<bool>(type: "bit", nullable: false),
+                    DateEvaluated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RMSE = table.Column<double>(type: "float", nullable: false),
+                    MAE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MAPE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MSE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    RMSE2 = table.Column<double>(type: "float", nullable: false),
+                    MAE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MAPE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MSE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    RMSE3 = table.Column<double>(type: "float", nullable: false),
+                    MAE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MAPE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
+                    MSE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GetErrorValues", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GetErrorValues_GetForecastDescriptions_ForecastDescriptionIdError",
+                        column: x => x.ForecastDescriptionIdError,
+                        principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -180,6 +188,11 @@ namespace forecastingGas.Migrations
                 name: "IX_GetActualValues_DataDescriptionID",
                 table: "GetActualValues",
                 column: "DataDescriptionID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GetErrorValues_ForecastDescriptionIdError",
+                table: "GetErrorValues",
+                column: "ForecastDescriptionIdError");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GetForecastValues_ForecastDescriptionID",

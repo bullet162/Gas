@@ -11,7 +11,7 @@ public class DataDescription
 
     public string ColumnName { get; set; } = string.Empty;
     public int TotalCount { get; set; }
-    public DateTime DateUploaded { get; set; } = DateTime.Today;
+    public DateTime DateUploaded { get; set; } = DateTime.UtcNow;
     public List<ActualValues> ActualValues { get; set; } = null!;
 }
 

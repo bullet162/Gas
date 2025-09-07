@@ -50,10 +50,18 @@ public class AppDbContext : DbContext
         .OnDelete(DeleteBehavior.Cascade);
 
     modelBuilder.Entity<PredictionValues3>()
-       .HasOne(p => p.GetForecastDescription3)
+       .HasOne(p => p.GetForecastDescription4)
        .WithMany(fd => fd.GetPredictionValues3)
        .HasForeignKey(p => p.ForecastDescriptionID4)
        .OnDelete(DeleteBehavior.Cascade);
+
+    modelBuilder.Entity<ErrorValues>()
+      .HasOne(e => e.GetForecastDescription5)
+      .WithMany(fd => fd.GetErrorValues)
+      .HasForeignKey(e => e.ForecastDescriptionIdError)
+      .OnDelete(DeleteBehavior.Cascade);
+
+
 
     modelBuilder.Entity<ForecastDescription>()
       .Property(f => f.isLogTransformed)

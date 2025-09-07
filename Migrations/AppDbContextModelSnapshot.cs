@@ -85,6 +85,9 @@ namespace forecastingGas.Migrations
                     b.Property<DateTime>("DateEvaluated")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ForecastDescriptionIdError")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("MAE")
                         .HasColumnType("decimal(18,9)");
 
@@ -121,7 +124,12 @@ namespace forecastingGas.Migrations
                     b.Property<double>("RMSE3")
                         .HasColumnType("float");
 
+                    b.Property<bool>("isLogTransformed")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ForecastDescriptionIdError");
 
                     b.ToTable("GetErrorValues");
                 });
@@ -270,6 +278,17 @@ namespace forecastingGas.Migrations
                     b.Navigation("GetDataDescription");
                 });
 
+            modelBuilder.Entity("ForecastingGas.Data.Entities.ErrorValues", b =>
+                {
+                    b.HasOne("ForecastingGas.Data.Entities.ForecastDescription", "GetForecastDescription5")
+                        .WithMany("GetErrorValues")
+                        .HasForeignKey("ForecastDescriptionIdError")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GetForecastDescription5");
+                });
+
             modelBuilder.Entity("ForecastingGas.Data.Entities.ForecastValues", b =>
                 {
                     b.HasOne("ForecastingGas.Data.Entities.ForecastDescription", "GetForecastDescription")
@@ -305,13 +324,13 @@ namespace forecastingGas.Migrations
 
             modelBuilder.Entity("ForecastingGas.Data.Entities.PredictionValues3", b =>
                 {
-                    b.HasOne("ForecastingGas.Data.Entities.ForecastDescription", "GetForecastDescription3")
+                    b.HasOne("ForecastingGas.Data.Entities.ForecastDescription", "GetForecastDescription4")
                         .WithMany("GetPredictionValues3")
                         .HasForeignKey("ForecastDescriptionID4")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GetForecastDescription3");
+                    b.Navigation("GetForecastDescription4");
                 });
 
             modelBuilder.Entity("ForecastingGas.Data.Entities.DataDescription", b =>
@@ -321,6 +340,8 @@ namespace forecastingGas.Migrations
 
             modelBuilder.Entity("ForecastingGas.Data.Entities.ForecastDescription", b =>
                 {
+                    b.Navigation("GetErrorValues");
+
                     b.Navigation("GetForecastValues");
 
                     b.Navigation("GetPredictionValues");

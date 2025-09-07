@@ -70,6 +70,12 @@ public class UploadCsv : IUploadCsv
                 }
             }
 
+            if (data.Count > 1001)
+                data = data.TakeLast(1000).ToList();
+
+            if (data.Count <= 0)
+                throw new ArgumentNullException("Data is Empty!");
+
             return (data, displayName, data.Count);
         }
     }

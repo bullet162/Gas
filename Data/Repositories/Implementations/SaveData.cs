@@ -15,7 +15,7 @@ public class SaveData : ISaveData
     }
 
     //save forecast
-    public async Task<bool> SaveDatas(ALgoOutput output)
+    public async Task<ForecastDescription> SaveDatas(ALgoOutput output)
     {
         var result = new ForecastDescription
         {
@@ -50,17 +50,12 @@ public class SaveData : ISaveData
             isLogTransformed = output.IsLogTransformed
         };
 
-        if (result == null)
-            return false;
+        await _DB.AddAsync(result);
+        await _DB.SaveChangesAsync();
 
-        else
-        {
-            await _DB.AddAsync(result);
-            await _DB.SaveChangesAsync();
-
-            return true;
-        }
+        return result;
     }
+
 
     //save actualValues
     public async Task<bool> SaveRawData(RawDataOutput dataOutput)
@@ -91,8 +86,10 @@ public class SaveData : ISaveData
     {
         var results = new ErrorValues
         {
+            ForecastDescriptionIdError = output.ForecastID,
             ColumnName = output.ColumnName,
             AlgoType = output.AlgoType,
+            isLogTransformed = output.isLogTransformed,
             RMSE = output.RMSE,
             MSE = output.MSE,
             MAE = output.MAE,
@@ -100,7 +97,11 @@ public class SaveData : ISaveData
             RMSE2 = output.RMSE2,
             MSE2 = output.MSE2,
             MAE2 = output.MAE2,
-            MAPE2 = output.MAPE2
+            MAPE2 = output.MAPE2,
+            RMSE3 = output.RMSE3,
+            MSE3 = output.MSE3,
+            MAE3 = output.MAE3,
+            MAPE3 = output.MAPE3
         };
 
         if (results == null)

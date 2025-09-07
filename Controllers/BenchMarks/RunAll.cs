@@ -54,7 +54,12 @@ public class BenchmarkController : Controller
             if (benchmark.ColumnName == null)
                 return BadRequest("Column name of actual values required!");
 
+
+
             var data = await _get.ActualValues(benchmark.ColumnName);
+
+            if (data.ActualValues == null || data.ActualValues.Count == 0)
+                return NotFound("No data found with that column name...");
 
             bool isLogTransformed = false;
             if (benchmark.LogTransform.Trim().ToLower() == "yes")
@@ -69,7 +74,6 @@ public class BenchmarkController : Controller
                 && exFData.ColumnName.Trim().ToLower() == benchmark.ColumnName.Trim().ToLower()
                 && exFData.IsLogTransformed == isLogTransformed)
             {
-                // Already exists → just return
                 algoOutput = exFData;
                 errorOutput = await _getErr.GetErrorOutputsById(exFData.Id);
                 return Ok(new { algoOutput, errorOutput });
@@ -77,13 +81,6 @@ public class BenchmarkController : Controller
             else
             {
 
-                if (data.ActualValues == null || data.ActualValues.Count == 0)
-                    return NotFound("No data found with that column name...");
-
-                if (data.ActualValues.Count > 1001)
-                {
-                    data.ActualValues = data.ActualValues.TakeLast(800).ToList();
-                }
 
                 List<decimal> LogValues = new();
 
@@ -231,11 +228,14 @@ public class BenchmarkController : Controller
                     TotalCount = result.PredictionValues.Count + result.PredictionValues2.Count
                     + result.PreditionValuesAverage.Count
                 };
-
+                var entity = await _save.SaveDatas(algoOutput);
+                algoOutput.Id = entity.Id;
                 errorOutput = new ErrorOutput
                 {
+                    ForecastID = algoOutput.Id,
                     AlgoType = result.AlgoType,
                     ColumnName = data.ColumnName,
+                    isLogTransformed = algoOutput.IsLogTransformed,
                     MAE = error1.MAE,
                     MSE = error1.MSE,
                     MAPE = error1.MAPE,
@@ -250,7 +250,6 @@ public class BenchmarkController : Controller
                     RMSE3 = error3.RMSE,
                 };
 
-                await _save.SaveDatas(algoOutput);
                 await _save.SaveErrorData(errorOutput);
 
                 return Ok(new

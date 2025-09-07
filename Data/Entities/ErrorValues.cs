@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace ForecastingGas.Data.Entities;
 
@@ -8,9 +9,13 @@ public class ErrorValues
     [Key]
     public int Id { get; set; }
 
+    [ForeignKey("ForecastDescription")]
+    public int ForecastDescriptionIdError { get; set; }
+    public ForecastDescription GetForecastDescription5 { get; set; } = null!;
     public string ColumnName { get; set; } = string.Empty;
     public string AlgoType { get; set; } = string.Empty;
-    public DateTime DateEvaluated { get; set; } = DateTime.Today;
+    public bool isLogTransformed { get; set; }
+    public DateTime DateEvaluated { get; set; } = DateTime.UtcNow;
 
     public double RMSE { get; set; }
 

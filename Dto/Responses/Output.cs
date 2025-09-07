@@ -35,8 +35,10 @@ public class RawDataOutput
 
 public class ErrorOutput
 {
+    public int ForecastID { get; set; } = new();
     public string ColumnName { get; set; } = string.Empty;
     public string AlgoType { get; set; } = string.Empty;
+    public bool isLogTransformed { get; set; } = new();
     public double RMSE { get; set; } = new();
     public decimal MAE { get; set; } = new();
     public decimal MAPE { get; set; } = new();
