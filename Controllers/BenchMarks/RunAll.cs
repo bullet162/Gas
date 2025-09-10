@@ -25,10 +25,11 @@ public class BenchmarkController : Controller
     private ISaveData _save;
     private ITrainTest _TrainTest;
     private ISearch _search;
+    private readonly ILogger<BenchmarkController> _logger;
     public BenchmarkController
     (ITrainTest trainTest, IGetData get, ISes ses, IHwes hwes, IMtGas gas,
     IError error, IProcessing processing, ISaveData save, ISearch search,
-    IGetForecastValues getF, IGetError getError)
+    IGetForecastValues getF, IGetError getError, ILogger<BenchmarkController> logger)
     {
         _TrainTest = trainTest;
         _get = get;
@@ -41,6 +42,7 @@ public class BenchmarkController : Controller
         _search = search;
         _getf = getF;
         _getErr = getError;
+        _logger = logger;
     }
 
     [HttpPost("forecast")]
@@ -54,12 +56,14 @@ public class BenchmarkController : Controller
             if (benchmark.ColumnName == null)
                 return BadRequest("Column name of actual values required!");
 
-
+            _logger.LogInformation($"Column name: {benchmark.ColumnName}");
 
             var data = await _get.ActualValues(benchmark.ColumnName);
 
             if (data.ActualValues == null || data.ActualValues.Count == 0)
                 return NotFound("No data found with that column name...");
+
+            _logger.LogInformation($"Data: {data.ActualValues.Count}");
 
             bool isLogTransformed = false;
             if (benchmark.LogTransform.Trim().ToLower() == "yes")
@@ -80,8 +84,6 @@ public class BenchmarkController : Controller
             }
             else
             {
-
-
                 List<decimal> LogValues = new();
 
                 if (benchmark.LogTransform.Trim().ToLower() == "yes")
@@ -91,11 +93,13 @@ public class BenchmarkController : Controller
 
                 var ActualValues = _TrainTest.SplitDataTwo(LogValues);
 
+                _logger.LogInformation($"Training Data: {ActualValues.Train.Count}, Test Data: {ActualValues.Test.Count}");
+
                 var error1 = new ErrorOutput();
                 var error2 = new ErrorOutput();
                 var error3 = new ErrorOutput();
 
-                var seasonLength = ActualValues.Train.Count / 10;
+                int seasonLength = data.ActualValues.Count / 10 < 12 ? 12 : data.ActualValues.Count / 10;
 
                 var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
 
@@ -261,7 +265,7 @@ public class BenchmarkController : Controller
         }
         catch (Exception ex)
         {
-            return BadRequest($"Something went wrong {ex.Message}");
+            return BadRequest(new { response = $"Something went wrong {ex.Message}" });
         }
     }
 

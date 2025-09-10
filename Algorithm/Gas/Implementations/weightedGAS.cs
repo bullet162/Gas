@@ -17,7 +17,8 @@ public class MTGas : IMtGas
     private IModel _model;
     private ISearch _search;
     private IWatch _watch;
-    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search, IWatch watch)
+    private readonly ILogger<MTGas> _log;
+    public MTGas(ISes ses, IHwes hwes, IError error, IModel model, ISearch search, IWatch watch, ILogger<MTGas> log)
     {
         _ses = ses;
         _hwes = hwes;
@@ -25,6 +26,7 @@ public class MTGas : IMtGas
         _model = model;
         _search = search;
         _watch = watch;
+        _log = log;
     }
 
     public (List<decimal> forecast, decimal alpha) CalculateSes(SesParams ses)
@@ -49,7 +51,6 @@ public class MTGas : IMtGas
 
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
-
         _watch.StartWatch();
         List<decimal> gasForecast = new();
         List<decimal> seasonalValues = new();
@@ -57,7 +58,7 @@ public class MTGas : IMtGas
         List<decimal> levelValues = new();
         List<decimal> GasPrediction = new();
         List<decimal> GasPrediction2 = new();
-        (decimal alpha, decimal beta, decimal gamma, decimal mse, List<decimal> forecast) optimalParams = new();
+        (decimal alpha, decimal beta, decimal gamma, decimal mse) optimalParams = new();
         decimal alphaSes = new(); ;
         const string model = "GAS";
         var newHwesParams = new HwesParams();
@@ -168,7 +169,7 @@ public class MTGas : IMtGas
                 PredictionValues = hwesParams.PredictionValues,
             };
 
-            List<decimal> pred1 = _hwes.GenerateForecasts(newHwesParams);
+            List<decimal> pred1 = _hwes.GenerateForecasts(finalHwesParams);
             GasPrediction.AddRange(pred1);
 
             for (int i = 0; i < hwesParams.ForecasHorizon; i++)
@@ -192,6 +193,19 @@ public class MTGas : IMtGas
 
 
         var timeComputed = _watch.StopWatch();
+        _log.LogInformation($"Total Count");
+        _log.LogInformation($"Actual Values: {hwesParams.ActualValues.Count}");
+        _log.LogInformation($"Forecast Values: {gasForecast.Count}");
+        _log.LogInformation($"Level: {levelValues.Count}");
+        _log.LogInformation($"Trend: {trendValues.Count}");
+        _log.LogInformation($"Seasonal: {seasonalValues.Count}");
+        _log.LogInformation($"Prediction 1: {GasPrediction.Count}");
+        _log.LogInformation($"Prediction 2: {GasPrediction2.Count}");
+        _log.LogInformation($"Prediction 3: {averaged.Count}");
+        _log.LogInformation($"Alpha Ses: {alphaSes}");
+        _log.LogInformation($"Alpha Hwes: {optimalParams.alpha}");
+        _log.LogInformation($"Beta: {optimalParams.beta}");
+        _log.LogInformation($"Gamma: {optimalParams.gamma}");
         return new ALgoOutput
         {
             ForecastValues = gasForecast,

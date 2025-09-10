@@ -22,6 +22,27 @@ public class HwesParams
 
 }
 
+public class HwesParamsFast
+{
+    public decimal Alpha { get; set; } = new();
+
+    public decimal Beta { get; set; } = new();
+
+    public decimal Gamma { get; set; } = new();
+    public int ForecasHorizon { get; set; } = new();
+    public int SeasonLength { get; set; } = new();
+
+    public decimal[] ActualValues { get; set; } = default!;
+    public decimal[] ForecastValues { get; set; } = default!;
+    public decimal[] SeasonalValues { get; set; } = default!;
+    public decimal[] TrendValues { get; set; } = default!;
+    public decimal[] LevelValues { get; set; } = default!;
+    public decimal[] PredictionValues { get; set; } = default!;
+
+    public string AddPrediction { get; set; } = string.Empty;
+
+}
+
 public class InputHwesController
 {
     public string ColumnName { get; set; } = string.Empty;

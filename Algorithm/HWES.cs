@@ -12,9 +12,11 @@ namespace ForecastingGas.Algorithm.Hwes
     {
         private int _seasonLength;
         private IWatch _watch;
-        public AdditiveHwes(IWatch watch)
+        private readonly ILogger<AdditiveHwes> _logger;
+        public AdditiveHwes(IWatch watch, ILogger<AdditiveHwes> logger)
         {
             _watch = watch;
+            _logger = logger;
         }
 
         public ALgoOutput TrainForecast(HwesParams hwesParams)

@@ -20,6 +20,12 @@ using ForecastingGas.Algorithm.Gas;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddConsole();
+});
+
 // 1. Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
