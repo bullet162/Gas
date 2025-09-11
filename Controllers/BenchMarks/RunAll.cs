@@ -99,7 +99,7 @@ public class BenchmarkController : Controller
                 var error2 = new ErrorOutput();
                 var error3 = new ErrorOutput();
 
-                int seasonLength = data.ActualValues.Count / 10 < 12 ? 12 : data.ActualValues.Count / 10;
+                int seasonLength = 12;
 
                 var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
 
@@ -225,6 +225,7 @@ public class BenchmarkController : Controller
                     AlphaSes = result.AlphaSes,
                     AlphaHwes = result.AlphaHwes,
                     Beta = result.Beta,
+                    Gamma = result.Gamma,
                     TimeComputed = result.TimeComputed,
                     SeasonLength = result.SeasonLength,
                     DatePredicted = DateTime.Now,
@@ -232,8 +233,8 @@ public class BenchmarkController : Controller
                     TotalCount = result.PredictionValues.Count + result.PredictionValues2.Count
                     + result.PreditionValuesAverage.Count
                 };
-                var entity = await _save.SaveDatas(algoOutput);
-                algoOutput.Id = entity.Id;
+                // var entity = await _save.SaveDatas(algoOutput);
+                // algoOutput.Id = entity.Id;
                 errorOutput = new ErrorOutput
                 {
                     ForecastID = algoOutput.Id,
@@ -254,7 +255,7 @@ public class BenchmarkController : Controller
                     RMSE3 = error3.RMSE,
                 };
 
-                await _save.SaveErrorData(errorOutput);
+                // await _save.SaveErrorData(errorOutput);
 
                 return Ok(new
                 {
@@ -265,8 +266,7 @@ public class BenchmarkController : Controller
         }
         catch (Exception ex)
         {
-            return BadRequest(new { response = $"Something went wrong {ex.Message}" });
+            return BadRequest(new { response = $"{ex.Message}!" });
         }
     }
-
 }

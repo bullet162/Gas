@@ -63,13 +63,16 @@ public class MTGas : IMtGas
         const string model = "GAS";
         var newHwesParams = new HwesParams();
 
-        int windowSize = hwesParams.ActualValues.Count / 2;
-        hwesParams.SeasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
+        int windowSize = hwesParams.ActualValues.Count;
+        int seasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
         if (windowSize < hwesParams.SeasonLength * 2)
             throw new ArgumentException(
                 $"Window size ({windowSize}) too small for seasonLength {hwesParams.SeasonLength}. " +
                 "Need at least 2 × seasonLength points.");
+
+        optimalParams = _search.GridSearchHWES(hwesParams.ActualValues, seasonLength);
+        alphaSes = _search.GenerateOptimalAlpha(hwesParams.ActualValues);
 
         for (int end = windowSize; end <= hwesParams.ActualValues.Count; end++)
         {
@@ -78,15 +81,13 @@ public class MTGas : IMtGas
                 .Take(windowSize)
                 .ToList();
 
-            optimalParams = _search.GridSearchHWES(windowedData, hwesParams.SeasonLength);
-
             newHwesParams = new HwesParams
             {
                 ActualValues = windowedData,
                 Alpha = optimalParams.alpha,
                 Beta = optimalParams.beta,
                 Gamma = optimalParams.gamma,
-                SeasonLength = Math.Max(2, Math.Min(hwesParams.SeasonLength, windowedData.Count / 2)),
+                SeasonLength = hwesParams.SeasonLength,
                 ForecasHorizon = hwesParams.ForecasHorizon,
                 ForecastValues = new List<decimal>(),
                 SeasonalValues = new List<decimal>(),
@@ -95,7 +96,6 @@ public class MTGas : IMtGas
             };
 
             var copyData = windowedData.ToList();
-            alphaSes = _search.GenerateOptimalAlpha(windowedData);
             var newSesParams = new SesParams
             {
                 ActualValues = copyData,
