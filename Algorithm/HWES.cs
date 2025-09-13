@@ -99,7 +99,7 @@ namespace ForecastingGas.Algorithm.Hwes
             {
                 ForecastValues = hwesParams.ForecastValues,
                 ActualValues = hwesParams.ActualValues,
-                TotalCount = hwesParams.ActualValues.Count,
+                TotalCount = hwesParams.PredictionValues.Count,
                 AlgoType = modelName,
                 LevelValues = _level,
                 TrendValues = _trend,

@@ -20,7 +20,6 @@ public class UploadFile : ControllerBase
         _get = get;
     }
 
-    //search for libraries for api callings
     [HttpPost("csvColumnNames")]
     public async Task<IActionResult> UploadCsvforColumnNames([FromForm] FileUpload fileUpload)
     {

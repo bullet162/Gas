@@ -41,7 +41,7 @@ public class ForecastSes : ISes
             output.PredictionValues.Add(prediction);
         }
 
-        int TotalCount = output.ForecastValues.Count;
+        int TotalCount = output.PredictionValues.Count;
         string timeComputed = _watch.StopWatch();
         var result = new ALgoOutput
         {

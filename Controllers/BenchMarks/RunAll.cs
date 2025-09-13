@@ -11,9 +11,8 @@ namespace ForecastingGas.Controllers.Benchmark;
 
 [ApiController]
 [Route("api/algorithm")]
-public class BenchmarkController : Controller
+public class BenchmarkController : ControllerBase
 {
-
     private readonly IGetData _get;
     private readonly IGetForecastValues _getf;
     private readonly IGetError _getErr;

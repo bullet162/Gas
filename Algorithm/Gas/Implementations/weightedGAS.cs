@@ -205,7 +205,7 @@ public class MTGas : IMtGas
             ForecastValues = gasForecast,
             ActualValues = hwesParams.ActualValues,
             ColumnName = gasRequest.ColumnName,
-            TotalCount = GasPrediction.Count,
+            TotalCount = GasPrediction.Count + GasPrediction2.Count + averaged.Count,
             AlgoType = model,
             LevelValues = levelValues,
             TrendValues = trendValues,
