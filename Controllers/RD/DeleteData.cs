@@ -32,7 +32,7 @@ public class DeleteData : ControllerBase
         }
     }
 
-    [HttpDelete("ActualDataByColumnName")]
+    [HttpDelete("ActualDataByID")]
     public async Task<IActionResult> DeleteDataById(int id)
     {
         try

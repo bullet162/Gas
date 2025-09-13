@@ -66,11 +66,6 @@ public class MTGas : IMtGas
         int windowSize = hwesParams.ActualValues.Count;
         int seasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
-        if (windowSize < hwesParams.SeasonLength * 2)
-            throw new ArgumentException(
-                $"Window size ({windowSize}) too small for seasonLength {hwesParams.SeasonLength}. " +
-                "Need at least 2 × seasonLength points.");
-
         optimalParams = _search.GridSearchHWES(hwesParams.ActualValues, seasonLength);
         alphaSes = _search.GenerateOptimalAlpha(hwesParams.ActualValues);
 
@@ -149,7 +144,6 @@ public class MTGas : IMtGas
                     trendValues.Add(forecastHwes.TrendValues.Last());
                 if (forecastHwes.LevelValues.Any())
                     levelValues.Add(forecastHwes.LevelValues.Last());
-
             }
 
         }
@@ -183,8 +177,6 @@ public class MTGas : IMtGas
                 else
                     GasPrediction2.Add(alphaSes * GasPrediction[i] + (1 - alphaSes) * GasPrediction2[i - 1]);
             }
-
-
         }
 
         var averaged = GasPrediction
@@ -193,6 +185,7 @@ public class MTGas : IMtGas
 
 
         var timeComputed = _watch.StopWatch();
+
         _log.LogInformation($"Total Count");
         _log.LogInformation($"Actual Values: {hwesParams.ActualValues.Count}");
         _log.LogInformation($"Forecast Values: {gasForecast.Count}");
@@ -206,6 +199,7 @@ public class MTGas : IMtGas
         _log.LogInformation($"Alpha Hwes: {optimalParams.alpha}");
         _log.LogInformation($"Beta: {optimalParams.beta}");
         _log.LogInformation($"Gamma: {optimalParams.gamma}");
+
         return new ALgoOutput
         {
             ForecastValues = gasForecast,

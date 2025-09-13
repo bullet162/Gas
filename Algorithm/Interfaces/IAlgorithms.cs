@@ -23,10 +23,6 @@ public interface IHwes
     ALgoOutput TrainForecast(HwesParams hwesParams);
     List<decimal> GenerateForecasts(HwesParams hwesParams);
 }
-public interface IMa
-{
-    List<decimal> MaForecast(List<decimal> actualValues, int window);
-}
 
 public interface ITrainTest
 {
@@ -38,9 +34,4 @@ public interface IProcessing
 {
     List<decimal> LogTransformation(List<decimal> ActualValues);
     List<decimal> BackLogTransform(List<decimal> LogValues);
-}
-
-public interface ISortPredictions
-{
-    PredictionsResult SortForecast(PredictionsResult predictions);
 }

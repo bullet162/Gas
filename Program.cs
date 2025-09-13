@@ -8,7 +8,6 @@ using ForecastingGas.Algorithm.Hwes;
 using ForecastingGas.Error_Metrics.Interfaces;
 using ForecastingGas.Error_Metrics.Service;
 using ForecastingGas.Utils.Interfaces;
-using ForecastingGas.Utils.numberGenerator;
 using ForecastingGas.Utils.Csv;
 using ForecastingGas.Algorithm.Gas.Interface;
 using ForecastingGas.Algorithm.Gas.Implementations;
@@ -35,7 +34,6 @@ builder.Services.AddScoped<IGetData, Data>();
 builder.Services.AddScoped<ISaveData, SaveData>();
 builder.Services.AddScoped<IHwes, AdditiveHwes>();
 builder.Services.AddScoped<IError, Error>();
-builder.Services.AddScoped<IDataProvider, Numbers>();
 builder.Services.AddScoped<IUploadCsv, UploadCsv>();
 builder.Services.AddScoped<IMtGas, MTGas>();
 builder.Services.AddScoped<IModel, WeightedForecast>();
@@ -47,7 +45,6 @@ builder.Services.AddScoped<ITrainTest, TrainTest>();
 builder.Services.AddScoped<IDeleteData, DeleteData>();
 builder.Services.AddScoped<IWatch, Watch>();
 builder.Services.AddScoped<IProcessing, Processing>();
-builder.Services.AddScoped<ISortPredictions, SortPredictions>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

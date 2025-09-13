@@ -99,7 +99,10 @@ public class BenchmarkController : Controller
                 var error2 = new ErrorOutput();
                 var error3 = new ErrorOutput();
 
-                int seasonLength = 12;
+                if (benchmark.AlgoType.Trim().ToLower() == "ses")
+                    benchmark.SeasonLength = 1;
+
+                int seasonLength = benchmark.SeasonLength;
 
                 var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
 
@@ -182,7 +185,6 @@ public class BenchmarkController : Controller
                         ActualValues = backData,
                         ForecastValues = backfData3
                     };
-
 
                     error1 = _error.EvaluateAlgoErrors(errorParam);
                     error2 = _error.EvaluateAlgoErrors(errorParam2);
