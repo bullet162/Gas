@@ -52,101 +52,87 @@ public class MTGas : IMtGas
     public ALgoOutput ApplyMtGas(HwesParams hwesParams, GasRequest gasRequest)
     {
         _watch.StartWatch();
-        List<decimal> gasForecast = new();
-        List<decimal> seasonalValues = new();
-        List<decimal> trendValues = new();
-        List<decimal> levelValues = new();
-        List<decimal> GasPrediction = new();
-        List<decimal> GasPrediction2 = new();
-        (decimal alpha, decimal beta, decimal gamma, decimal mse) optimalParams = new();
-        decimal alphaSes = new(); ;
-        const string model = "GAS";
+        ALgoOutput result = new();
+
+        result.AlgoType = "GAS";
+
         var newHwesParams = new HwesParams();
 
-        int windowSize = hwesParams.ActualValues.Count;
+        int data = hwesParams.ActualValues.Count;
+        result.ActualValues = hwesParams.ActualValues;
+
+        result.ColumnName = gasRequest.ColumnName;
         int seasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
-        optimalParams = _search.GridSearchHWES(hwesParams.ActualValues, seasonLength);
-        alphaSes = _search.GenerateOptimalAlpha(hwesParams.ActualValues);
+        var optimalParams = _search.GridSearchHWES(hwesParams.ActualValues, seasonLength);
 
-        for (int end = windowSize; end <= hwesParams.ActualValues.Count; end++)
+        result.AlphaHwes = optimalParams.alpha;
+        result.Beta = optimalParams.beta;
+        result.Gamma = optimalParams.gamma;
+
+        decimal alphaSes = _search.GenerateOptimalAlpha(hwesParams.ActualValues);
+
+        List<decimal> windowedData = hwesParams.ActualValues
+            .Take(data)
+            .ToList();
+
+        newHwesParams = new HwesParams
         {
-            var windowedData = hwesParams.ActualValues
-                .Skip(end - windowSize)
-                .Take(windowSize)
-                .ToList();
+            ActualValues = windowedData,
+            Alpha = optimalParams.alpha,
+            Beta = optimalParams.beta,
+            Gamma = optimalParams.gamma,
+            SeasonLength = hwesParams.SeasonLength,
+            ForecasHorizon = hwesParams.ForecasHorizon,
+            ForecastValues = new List<decimal>(),
+            SeasonalValues = new List<decimal>(),
+            LevelValues = new List<decimal>(),
+            TrendValues = new List<decimal>()
+        };
 
-            newHwesParams = new HwesParams
-            {
-                ActualValues = windowedData,
-                Alpha = optimalParams.alpha,
-                Beta = optimalParams.beta,
-                Gamma = optimalParams.gamma,
-                SeasonLength = hwesParams.SeasonLength,
-                ForecasHorizon = hwesParams.ForecasHorizon,
-                ForecastValues = new List<decimal>(),
-                SeasonalValues = new List<decimal>(),
-                LevelValues = new List<decimal>(),
-                TrendValues = new List<decimal>()
-            };
+        List<decimal> copyData = windowedData.ToList();
 
-            var copyData = windowedData.ToList();
-            var newSesParams = new SesParams
-            {
-                ActualValues = copyData,
-                Alpha = alphaSes
-            };
+        var newSesParams = new SesParams
+        {
+            ActualValues = copyData,
+            Alpha = alphaSes
+        };
 
-            (List<decimal> forecast, decimal alpha) forecastSes = default;
-            var forecastHwes = new ALgoOutput();
+        (List<decimal> forecast, decimal alpha) forecastSes = default;
+        var forecastHwes = new ALgoOutput();
 
-            Parallel.Invoke(
-                () => forecastSes = CalculateSes(newSesParams),
-                () => forecastHwes = CalculateHwes(newHwesParams)
-            );
+        Parallel.Invoke(
+            () => forecastSes = CalculateSes(newSesParams),
+            () => forecastHwes = CalculateHwes(newHwesParams)
+        );
 
-            alphaSes = forecastSes.alpha;
+        result.AlphaSes = forecastSes.alpha;
 
-            var sesError = new ErrorParams
-            {
-                ActualValues = windowedData,
-                ForecastValues = forecastSes.forecast!,
-                SeasonLength = hwesParams.SeasonLength
-            };
+        var sesError = new ErrorParams
+        {
+            ActualValues = windowedData,
+            ForecastValues = forecastSes.forecast!,
+            SeasonLength = hwesParams.SeasonLength
+        };
 
-            var hwesError = new ErrorParams
-            {
-                ActualValues = windowedData,
-                ForecastValues = forecastHwes.ForecastValues,
-                SeasonLength = hwesParams.SeasonLength
-            };
+        var hwesError = new ErrorParams
+        {
+            ActualValues = windowedData,
+            ForecastValues = forecastHwes.ForecastValues,
+            SeasonLength = hwesParams.SeasonLength
+        };
 
-            var mseHwes = _error.CalculateMse(hwesError);
-            var mseSes = _error.CalculateMse(sesError);
+        decimal mseHwes = _error.CalculateMse(hwesError);
+        decimal mseSes = _error.CalculateMse(sesError);
 
-            var weights = _model.CalculateWeights(mseSes, mseHwes);
+        var weights = _model.CalculateWeights(mseSes, mseHwes);
 
-            var forecast = _model.GasWeightedForecast(forecastSes.forecast!, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
+        var forecast = _model.GasWeightedForecast(forecastSes.forecast!, forecastHwes.ForecastValues, weights.weightSes, weights.weightHwes);
 
-            if (end == windowSize)
-            {
-                gasForecast.AddRange(forecast);
-                seasonalValues.AddRange(forecastHwes.SeasonalValues);
-                trendValues.AddRange(forecastHwes.TrendValues);
-                levelValues.AddRange(forecastHwes.LevelValues);
-            }
-            else if (forecast.Any())
-            {
-                gasForecast.Add(forecast.Last());
-                if (forecastHwes.SeasonalValues.Any())
-                    seasonalValues.Add(forecastHwes.SeasonalValues.Last());
-                if (forecastHwes.TrendValues.Any())
-                    trendValues.Add(forecastHwes.TrendValues.Last());
-                if (forecastHwes.LevelValues.Any())
-                    levelValues.Add(forecastHwes.LevelValues.Last());
-            }
-
-        }
+        result.ForecastValues.AddRange(forecast);
+        result.SeasonalValues.AddRange(forecastHwes.SeasonalValues);
+        result.TrendValues.AddRange(forecastHwes.TrendValues);
+        result.LevelValues.AddRange(forecastHwes.LevelValues);
 
         if (gasRequest.AddPrediction.Trim().ToLower() == "yes")
         {
@@ -157,68 +143,49 @@ public class MTGas : IMtGas
             {
                 SeasonLength = hwesParams.SeasonLength,
                 ForecasHorizon = hwesParams.ForecasHorizon,
-                LevelValues = levelValues,
-                TrendValues = trendValues,
-                SeasonalValues = seasonalValues,
+                LevelValues = result.LevelValues,
+                TrendValues = result.TrendValues,
+                SeasonalValues = result.SeasonalValues,
                 PredictionValues = hwesParams.PredictionValues,
             };
 
             List<decimal> pred1 = _hwes.GenerateForecasts(finalHwesParams);
-            GasPrediction.AddRange(pred1);
+            result.PredictionValues.AddRange(pred1);
 
             for (int i = 0; i < hwesParams.ForecasHorizon; i++)
             {
                 decimal prediction = new();
                 if (i == 0)
                 {
-                    prediction = alphaSes * GasPrediction[i] + (1 - alphaSes) * gasForecast.Last();
-                    GasPrediction2.Add(prediction);
+                    prediction = alphaSes * result.PredictionValues[i] + (1 - alphaSes) * result.ForecastValues.Last();
+                    result.PredictionValues2.Add(prediction);
                 }
                 else
-                    GasPrediction2.Add(alphaSes * GasPrediction[i] + (1 - alphaSes) * GasPrediction2[i - 1]);
+                    result.PredictionValues2.Add(alphaSes * result.PredictionValues[i] + (1 - alphaSes) * result.PredictionValues2[i - 1]);
             }
         }
 
-        var averaged = GasPrediction
-            .Zip(GasPrediction2, (a, b) => (a + b) / 2)
+        result.PreditionValuesAverage = result.PredictionValues
+            .Zip(result.PredictionValues2, (a, b) => (a + b) / 2)
             .ToList();
 
 
-        var timeComputed = _watch.StopWatch();
+        result.TimeComputed = _watch.StopWatch();
 
-        _log.LogInformation($"Total Count");
-        _log.LogInformation($"Actual Values: {hwesParams.ActualValues.Count}");
-        _log.LogInformation($"Forecast Values: {gasForecast.Count}");
-        _log.LogInformation($"Level: {levelValues.Count}");
-        _log.LogInformation($"Trend: {trendValues.Count}");
-        _log.LogInformation($"Seasonal: {seasonalValues.Count}");
-        _log.LogInformation($"Prediction 1: {GasPrediction.Count}");
-        _log.LogInformation($"Prediction 2: {GasPrediction2.Count}");
-        _log.LogInformation($"Prediction 3: {averaged.Count}");
-        _log.LogInformation($"Alpha Ses: {alphaSes}");
-        _log.LogInformation($"Alpha Hwes: {optimalParams.alpha}");
-        _log.LogInformation($"Beta: {optimalParams.beta}");
-        _log.LogInformation($"Gamma: {optimalParams.gamma}");
+        // _log.LogInformation($"Total Count");
+        // _log.LogInformation($"Actual Values: {hwesParams.ActualValues.Count}");
+        // _log.LogInformation($"Forecast Values: {gasForecast.Count}");
+        // _log.LogInformation($"Level: {levelValues.Count}");
+        // _log.LogInformation($"Trend: {trendValues.Count}");
+        // _log.LogInformation($"Seasonal: {seasonalValues.Count}");
+        // _log.LogInformation($"Prediction 1: {GasPrediction.Count}");
+        // _log.LogInformation($"Prediction 2: {GasPrediction2.Count}");
+        // _log.LogInformation($"Prediction 3: {averaged.Count}");
+        // _log.LogInformation($"Alpha Ses: {alphaSes}");
+        // _log.LogInformation($"Alpha Hwes: {optimalParams.alpha}");
+        // _log.LogInformation($"Beta: {optimalParams.beta}");
+        // _log.LogInformation($"Gamma: {optimalParams.gamma}");
 
-        return new ALgoOutput
-        {
-            ForecastValues = gasForecast,
-            ActualValues = hwesParams.ActualValues,
-            ColumnName = gasRequest.ColumnName,
-            TotalCount = GasPrediction.Count + GasPrediction2.Count + averaged.Count,
-            AlgoType = model,
-            LevelValues = levelValues,
-            TrendValues = trendValues,
-            SeasonalValues = seasonalValues,
-            SeasonLength = hwesParams.SeasonLength,
-            PredictionValues = GasPrediction,
-            TimeComputed = timeComputed,
-            PredictionValues2 = GasPrediction2,
-            AlphaSes = alphaSes,
-            AlphaHwes = optimalParams.alpha,
-            Beta = optimalParams.beta,
-            Gamma = optimalParams.gamma,
-            PreditionValuesAverage = averaged
-        };
+        return result;
     }
 }
