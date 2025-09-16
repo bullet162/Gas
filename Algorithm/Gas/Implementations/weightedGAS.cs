@@ -170,6 +170,7 @@ public class MTGas : IMtGas
             .ToList();
 
 
+        result.SeasonLength = hwesParams.SeasonLength;
         result.TimeComputed = _watch.StopWatch();
 
         // _log.LogInformation($"Total Count");

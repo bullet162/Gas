@@ -27,7 +27,6 @@ public class UploadCsv : IUploadCsv
             .Select(c => c.Trim('"'))
             .ToList();
 
-
         }
 
         return columnNames;

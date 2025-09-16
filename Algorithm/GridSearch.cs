@@ -58,7 +58,6 @@ public class GridSearch : ISearch
         return mse / n;
     }
 
-
     public (decimal alpha, decimal beta, decimal gamma, decimal mse) GridSearchHWES(
     List<decimal> actualData,
     int seasonLength,
