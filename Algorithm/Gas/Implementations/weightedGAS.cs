@@ -31,7 +31,9 @@ public class MTGas : IMtGas
 
     public (List<decimal> forecast, decimal alpha) CalculateSes(SesParams ses)
     {
-        var results = _ses.SesForecast(0.1m, ses.ActualValues, ses.ForecastHorizon);
+        decimal alpha = _search.GenerateOptimalAlpha(ses.ActualValues);
+
+        var results = _ses.SesForecast(alpha, ses.ActualValues, ses.ForecastHorizon);
 
         return new(results.ForecastValues, results.AlphaSes);
     }
@@ -70,8 +72,6 @@ public class MTGas : IMtGas
         result.Beta = optimalParams.beta;
         result.Gamma = optimalParams.gamma;
 
-        decimal alphaSes = _search.GenerateOptimalAlpha(hwesParams.ActualValues);
-
         List<decimal> windowedData = hwesParams.ActualValues
             .Take(data)
             .ToList();
@@ -95,7 +95,7 @@ public class MTGas : IMtGas
         var newSesParams = new SesParams
         {
             ActualValues = copyData,
-            Alpha = alphaSes
+            Alpha = new decimal()
         };
 
         (List<decimal> forecast, decimal alpha) forecastSes = default;
@@ -147,9 +147,10 @@ public class MTGas : IMtGas
                 TrendValues = result.TrendValues,
                 SeasonalValues = result.SeasonalValues,
                 PredictionValues = hwesParams.PredictionValues,
+                Gamma = optimalParams.gamma
             };
 
-            List<decimal> pred1 = _hwes.GenerateForecasts(finalHwesParams);
+            List<decimal> pred1 = Prediction1(finalHwesParams);
             result.PredictionValues.AddRange(pred1);
 
             for (int i = 0; i < hwesParams.ForecasHorizon; i++)
@@ -157,11 +158,11 @@ public class MTGas : IMtGas
                 decimal prediction = new();
                 if (i == 0)
                 {
-                    prediction = alphaSes * result.PredictionValues[i] + (1 - alphaSes) * result.ForecastValues.Last();
+                    prediction = result.AlphaSes * result.PredictionValues[i] + (1 - result.AlphaSes) * result.ForecastValues.Last();
                     result.PredictionValues2.Add(prediction);
                 }
                 else
-                    result.PredictionValues2.Add(alphaSes * result.PredictionValues[i] + (1 - alphaSes) * result.PredictionValues2[i - 1]);
+                    result.PredictionValues2.Add(result.AlphaSes * result.PredictionValues[i] + (1 - result.AlphaSes) * result.PredictionValues2[i - 1]);
             }
         }
 
@@ -173,20 +174,33 @@ public class MTGas : IMtGas
         result.SeasonLength = hwesParams.SeasonLength;
         result.TimeComputed = _watch.StopWatch();
 
-        // _log.LogInformation($"Total Count");
-        // _log.LogInformation($"Actual Values: {hwesParams.ActualValues.Count}");
-        // _log.LogInformation($"Forecast Values: {gasForecast.Count}");
-        // _log.LogInformation($"Level: {levelValues.Count}");
-        // _log.LogInformation($"Trend: {trendValues.Count}");
-        // _log.LogInformation($"Seasonal: {seasonalValues.Count}");
-        // _log.LogInformation($"Prediction 1: {GasPrediction.Count}");
-        // _log.LogInformation($"Prediction 2: {GasPrediction2.Count}");
-        // _log.LogInformation($"Prediction 3: {averaged.Count}");
-        // _log.LogInformation($"Alpha Ses: {alphaSes}");
-        // _log.LogInformation($"Alpha Hwes: {optimalParams.alpha}");
-        // _log.LogInformation($"Beta: {optimalParams.beta}");
-        // _log.LogInformation($"Gamma: {optimalParams.gamma}");
-
         return result;
+    }
+
+
+    private List<decimal> Prediction1(HwesParams hwesParams)
+    {
+        List<decimal> _level = hwesParams.LevelValues;
+        List<decimal> _trend = hwesParams.TrendValues;
+        List<decimal> _seasonal = hwesParams.SeasonalValues;
+        int _seasonLength = hwesParams.SeasonLength;
+
+        var horizon = hwesParams.ForecasHorizon;
+        var forecasts = hwesParams.PredictionValues;
+        for (int i = 1; i <= horizon; i++)
+        {
+            if (_seasonal.Count < _seasonLength || _level.Count == 0 || _trend.Count == 0)
+                throw new InvalidOperationException("Model must be trained before generating forecasts.");
+
+            int seasonIndex = (_seasonal.Count - _seasonLength + (i % _seasonLength)) % _seasonLength;
+
+            if (_seasonLength >= 1)
+                forecasts.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
+
+            else
+                forecasts.Add(_level[^1] + i * _trend[^1]);
+        }
+
+        return forecasts;
     }
 }

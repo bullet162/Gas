@@ -49,8 +49,6 @@ public class BenchmarkController : ControllerBase
     {
         try
         {
-            benchmark.SeasonLength = benchmark.SeasonLength == 0 ? 1 : benchmark.SeasonLength;
-
             var errorOutput = new ErrorOutput();
             var algoOutput = new ALgoOutput();
 
@@ -139,64 +137,62 @@ public class BenchmarkController : ControllerBase
                 List<decimal> backData = new();
                 var input = benchmark.AlgoType.Trim().ToLower();
 
-                switch (input)
+
+                if (input == "ses")
                 {
-                    case "ses":
-                        var optimize = _search.GenerateOptimalAlpha(ActualValues.Train);
-                        result = _ses.SesForecast(optimize, ActualValues.Train, ActualValues.Test.Count);
-                        break;
-
-                    case "hwes":
-                        result = _hwes.TrainForecast(hwesParams);
-                        break;
-
-                    case "gas":
-                        result = _gas.ApplyMtGas(hwesParams, gasParams);
-
-                        if (benchmark.LogTransform.Trim().ToLower() == "yes")
-                        {
-                            backfData = _process.BackLogTransform(result.PredictionValues);
-                            backfData2 = _process.BackLogTransform(result.PredictionValues2);
-                            backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
-
-                            backData = _process.BackLogTransform(ActualValues.Test);
-                        }
-                        else
-                        {
-                            backfData = result.PredictionValues;
-                            backfData2 = result.PredictionValues2;
-                            backfData3 = result.PreditionValuesAverage;
-
-                            backData = ActualValues.Test;
-                        }
-                        var errorParam = new ErrorEvaluate
-                        {
-                            ActualValues = backData,
-                            ForecastValues = backfData
-                        };
-
-                        var errorParam2 = new ErrorEvaluate
-                        {
-                            ActualValues = backData,
-                            ForecastValues = backfData2
-                        };
-
-
-                        var errorParam3 = new ErrorEvaluate
-                        {
-                            ActualValues = backData,
-                            ForecastValues = backfData3
-                        };
-
-                        error1 = _error.EvaluateAlgoErrors(errorParam);
-                        error2 = _error.EvaluateAlgoErrors(errorParam2);
-                        error3 = _error.EvaluateAlgoErrors(errorParam3);
-                        break;
-
-                    default:
-                        return NotFound("404!");
-
+                    var optimize = _search.GenerateOptimalAlpha(ActualValues.Train);
+                    result = _ses.SesForecast(optimize, ActualValues.Train, ActualValues.Test.Count);
                 }
+
+                else if (input == "hwes")
+                    result = _hwes.TrainForecast(hwesParams);
+
+                else if (input == "gas")
+                {
+                    result = _gas.ApplyMtGas(hwesParams, gasParams);
+
+                    if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                    {
+                        backfData = _process.BackLogTransform(result.PredictionValues);
+                        backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                        backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
+
+                        backData = _process.BackLogTransform(ActualValues.Test);
+                    }
+                    else
+                    {
+                        backfData = result.PredictionValues;
+                        backfData2 = result.PredictionValues2;
+                        backfData3 = result.PreditionValuesAverage;
+
+                        backData = ActualValues.Test;
+                    }
+                    var errorParam = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData
+                    };
+
+                    var errorParam2 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData2
+                    };
+
+
+                    var errorParam3 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData3
+                    };
+
+                    error1 = _error.EvaluateAlgoErrors(errorParam);
+                    error2 = _error.EvaluateAlgoErrors(errorParam2);
+                    error3 = _error.EvaluateAlgoErrors(errorParam3);
+                }
+
+                else
+                    return NotFound("404!");
 
                 if (input == "hwes" || input == "ses" && input != "gas")
                 {
