@@ -32,7 +32,7 @@ public class ForecastSes : ISes
             if (i == 0)
                 output.ForecastValues.Add(data[0]);
             else
-                output.ForecastValues.Add(alpha * data[i] + (1 - alpha) * output.ForecastValues[i - 1]);
+                output.ForecastValues.Add(alpha * data[i - 1] + (1 - alpha) * output.ForecastValues[i - 1]);
         }
 
         for (int i = 0; i < forecastHorizon; i++)
