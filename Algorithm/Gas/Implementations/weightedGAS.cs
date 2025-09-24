@@ -158,11 +158,11 @@ public class MTGas : IMtGas
                 decimal prediction = new();
                 if (i == 0)
                 {
-                    prediction = result.AlphaSes * result.PredictionValues[i] + (1 - result.AlphaSes) * result.ForecastValues.Last();
+                    prediction = result.AlphaSes * result.ForecastValues.Last() + (1 - result.AlphaSes) * result.PredictionValues[i];
                     result.PredictionValues2.Add(prediction);
                 }
                 else
-                    result.PredictionValues2.Add(result.AlphaSes * result.PredictionValues[i] + (1 - result.AlphaSes) * result.PredictionValues2[i - 1]);
+                    result.PredictionValues2.Add(result.AlphaSes * result.PredictionValues2[i - 1] + (1 - result.AlphaSes) * result.PredictionValues[i]);
             }
         }
 
@@ -194,7 +194,7 @@ public class MTGas : IMtGas
 
             int seasonIndex = (_seasonal.Count - _seasonLength + (i % _seasonLength)) % _seasonLength;
 
-            if (_seasonLength >= 1)
+            if (_seasonLength > 1)
                 forecasts.Add(_level[^1] + i * _trend[^1] + _seasonal[seasonIndex]);
 
             else
