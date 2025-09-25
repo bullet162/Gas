@@ -10,6 +10,7 @@ public class ForecastSes : ISes
     private IWatch _watch;
     public ForecastSes(IWatch watch)
     {
+        // you changed the _watch to -watch
         _watch = watch;
     }
 
@@ -27,6 +28,7 @@ public class ForecastSes : ISes
         var prediction = new decimal();
         var output = new ALgoOutput();
 
+        //you change < to >
         for (int i = 0; i < data.Count; i++)
         {
             if (i == 0)
@@ -35,6 +37,7 @@ public class ForecastSes : ISes
                 output.ForecastValues.Add(alpha * data[i - 1] + (1 - alpha) * output.ForecastValues[i - 1]);
         }
 
+        //you remove the + from the i++
         for (int i = 0; i < forecastHorizon; i++)
         {
             prediction = alpha * data[^1] + (1 - alpha) * output.ForecastValues[^1];
@@ -57,3 +60,6 @@ public class ForecastSes : ISes
         return result;
     }
 }
+
+
+// you add another curly brace }
