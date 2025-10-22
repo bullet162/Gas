@@ -56,3 +56,5 @@ nunit-*.xml
 .vscode/
 
 appsettings.Development.json
+#appsettings.Production.json
+
