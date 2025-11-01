@@ -47,7 +47,17 @@ builder.Services.AddScoped<IWatch, Watch>();
 builder.Services.AddScoped<IProcessing, Processing>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            // Enable automatic retry if the Azure SQL database is waking up or transiently unavailable
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,                 // Try up to 5 times
+                maxRetryDelay: TimeSpan.FromSeconds(10),  // Wait up to 10 sec between tries
+                errorNumbersToAdd: null           // Use default transient error list
+            );
+        }));
 
 
 builder.Services.AddCors(options =>
@@ -62,8 +72,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "80";
-app.Urls.Add($"http://*:{port}");
+if (app.Environment.IsDevelopment())
+{
+    // Local dev – use launchSettings.json or fallback to 5297
+    app.Urls.Add("http://localhost:5297");
+}
+else
+{
+    // Production (Render) – use Render's provided port
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "80";
+    app.Urls.Add($"http://*:{port}");
+}
+
 
 
 app.UseSwagger();
