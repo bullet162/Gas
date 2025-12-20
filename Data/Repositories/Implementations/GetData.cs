@@ -62,32 +62,36 @@ public class Data : IGetData
 
         string key = columnName.Trim().ToLower();
 
+        RawDataOutput rawData = new();
         if (_CacheKeys.CacheKeys.Contains(key) && _cache.TryGetValue(key, out RawDataOutput? cachedData))
         {
+            rawData = cachedData!;
             return cachedData!;
         }
 
-        var data = await _DbContext.GetActualValues
-            .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == key)
-            .Select(x => new RawDataOutput
-            {
-                Id = x.GetDataDescription.Id,
-                ActualValues = x.GetDataDescription.ActualValues.Select(a => a.ActualValue).ToList(),
-                ColumnName = x.GetDataDescription.ColumnName,
-                TotalCount = x.GetDataDescription.TotalCount,
-                DateOfEntry = x.GetDataDescription.DateUploaded
-            })
-            .OrderByDescending(x => x.DateOfEntry)
-            .ThenBy(x => x.Id)
-            .FirstOrDefaultAsync();
+        return rawData;
 
-        if (data == null)
-            throw new ArgumentException("Invalid or insufficient data.");
+        // var data = await _DbContext.GetActualValues
+        //     .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == key)
+        //     .Select(x => new RawDataOutput
+        //     {
+        //         Id = x.GetDataDescription.Id,
+        //         ActualValues = x.GetDataDescription.ActualValues.Select(a => a.ActualValue).ToList(),
+        //         ColumnName = x.GetDataDescription.ColumnName,
+        //         TotalCount = x.GetDataDescription.TotalCount,
+        //         DateOfEntry = x.GetDataDescription.DateUploaded
+        //     })
+        //     .OrderByDescending(x => x.DateOfEntry)
+        //     .ThenBy(x => x.Id)
+        //     .FirstOrDefaultAsync();
 
-        _cache.Set(key, data, TimeSpan.FromMinutes(20));
-        _CacheKeys.CacheKeys.Add(key);
+        // if (data == null)
+        //     throw new ArgumentException("Invalid or insufficient data.");
 
-        return data;
+        // _cache.Set(key, data, TimeSpan.FromMinutes(20));
+        // _CacheKeys.CacheKeys.Add(key);
+
+        // return data;
     }
 
 
