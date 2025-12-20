@@ -57,12 +57,20 @@ public class Data : IGetData
     //Get ColumnName and ActualValues by columnName
     public async Task<RawDataOutput> ActualValues(string columnName)
     {
-
         if (string.IsNullOrEmpty(columnName))
             throw new ArgumentNullException("Column name cannot be null or empty.");
 
+        string key = columnName.Trim().ToLower();
+
+        // Try to get from cache first
+        if (_CacheKeys.CacheKeys.Contains(key) && _cache.TryGetValue(key, out RawDataOutput? cachedData))
+        {
+            return cachedData!;
+        }
+
+        // If not in cache, fetch from database
         var data = await _DbContext.GetActualValues
-            .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == columnName.Trim().ToLower())
+            .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == key)
             .Select(x => new RawDataOutput
             {
                 Id = x.GetDataDescription.Id,
@@ -78,8 +86,12 @@ public class Data : IGetData
         if (data == null)
             throw new ArgumentException("Invalid or insufficient data.");
 
-        return data;
+        // Optionally cache the result for future requests
+        _cache.Set(key, data, TimeSpan.FromMinutes(20));
+        _CacheKeys.CacheKeys.Add(key);
 
+        return data;
     }
+
 
 }
