@@ -2,37 +2,56 @@ using ForecastingGas.Data.Repositories.Interfaces;
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Dto.Responses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ForecastingGas.Data.Repositories.Implementations;
 
 public class Data : IGetData
 {
     private readonly AppDbContext _DbContext;
-
-    public Data(AppDbContext appDbContext)
+    private readonly IMemoryCache _cache;
+    private readonly RawDataCache _CacheKeys;
+    public Data(AppDbContext appDbContext, IMemoryCache cache, RawDataCache rawDataCache)
     {
         _DbContext = appDbContext;
+        _cache = cache;
+        _CacheKeys = rawDataCache;
     }
+
     //Get all ColumnName and id
     public async Task<List<RawDataOutput>> GetAllColumnNamesAndId()
     {
-        var result = await _DbContext.GetDataDescriptions
-        .Select(x => new RawDataOutput
+
+        try
         {
-            Id = x.Id,
-            ColumnName = x.ColumnName,
-            TotalCount = x.TotalCount,
-            DateOfEntry = x.DateUploaded,
-            ActualValues = x.ActualValues.Select(x => x.ActualValue).ToList()
-        })
-        .OrderBy(x => x.DateOfEntry)
-        .ThenBy(x => x.Id)
-        .ToListAsync();
+            var list = new List<RawDataOutput>();
+            foreach (var key in _CacheKeys.CacheKeys)
+            {
+                if (_cache.TryGetValue(key, out RawDataOutput? cachedData))
+                    list.Add(cachedData!);
+            }
+            return list;
+        }
+        catch
+        {
+            var result = await _DbContext.GetDataDescriptions
+            .Select(x => new RawDataOutput
+            {
+                Id = x.Id,
+                ColumnName = x.ColumnName,
+                TotalCount = x.TotalCount,
+                DateOfEntry = x.DateUploaded,
+                ActualValues = x.ActualValues.Select(x => x.ActualValue).ToList()
+            })
+            .OrderBy(x => x.DateOfEntry)
+            .ThenBy(x => x.Id)
+            .ToListAsync();
 
-        if (result == null || !result.Any())
-            return new List<RawDataOutput>();
+            if (result == null || !result.Any())
+                return new List<RawDataOutput>();
 
-        return result;
+            return result;
+        }
     }
 
     //Get ColumnName and ActualValues by columnName

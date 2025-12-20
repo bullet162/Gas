@@ -3,6 +3,7 @@ using ForecastingGas.Dto.Requests;
 using Microsoft.AspNetCore.Mvc;
 using ForecastingGas.Utils.Interfaces;
 using ForecastingGas.Data.Repositories.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ForecastingGas.Controllers;
 
@@ -13,11 +14,13 @@ public class UploadFile : ControllerBase
     private IUploadCsv _csv;
     private ISaveData _save;
     private readonly IGetData _get;
-    public UploadFile(IUploadCsv upload, ISaveData save, IGetData get)
+    private readonly IMemoryCache _cache;
+    public UploadFile(IUploadCsv upload, ISaveData save, IGetData get, IMemoryCache cache)
     {
         _csv = upload;
         _save = save;
         _get = get;
+        _cache = cache;
     }
 
     [HttpPost("csvColumnNames")]
@@ -66,6 +69,7 @@ public class UploadFile : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(check))
                 return Conflict(new { message = "Data already exist in the database." });
+
 
             await _save.SaveRawData(saveResult);
 

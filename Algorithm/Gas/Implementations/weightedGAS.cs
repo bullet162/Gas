@@ -67,7 +67,7 @@ public class MTGas : IMtGas
         int seasonLength = Math.Max(2, hwesParams.ActualValues.Count / 10);
 
         var optimalParams = _search.GridSearchHWES(hwesParams.ActualValues, seasonLength);
-
+        
         result.AlphaHwes = optimalParams.alpha;
         result.Beta = optimalParams.beta;
         result.Gamma = optimalParams.gamma;

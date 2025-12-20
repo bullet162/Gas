@@ -25,10 +25,11 @@ builder.Services.AddLogging(logging =>
     logging.AddConsole();
 });
 
-// 1. Add services
+// looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooonnggggggggggggggg
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache(); //new feature replaces database hehe
 builder.Services.AddScoped<ISes, ForecastSes>();
 builder.Services.AddScoped<IGetData, Data>();
 builder.Services.AddScoped<ISaveData, SaveData>();
@@ -51,11 +52,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions =>
         {
-            // Enable automatic retry if the Azure SQL database is waking up or transiently unavailable
             sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,                 // Try up to 5 times
-                maxRetryDelay: TimeSpan.FromSeconds(10),  // Wait up to 10 sec between tries
-                errorNumbersToAdd: null           // Use default transient error list
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null
             );
         }));
 
@@ -85,7 +85,6 @@ else
 }
 
 
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -94,7 +93,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");       // CORS before routing
 
-// app.UseAuthorization();        // If you use [Authorize]
+// app.UseAuthorization();     
 
 app.MapControllers();          // Routes controllers
 
