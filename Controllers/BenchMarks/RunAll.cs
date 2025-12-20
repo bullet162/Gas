@@ -51,94 +51,170 @@ public class BenchmarkController : ControllerBase
         {
             benchmark.SeasonLength = benchmark.SeasonLength == 0 ? 1 : benchmark.SeasonLength;
 
-            if (string.IsNullOrEmpty(benchmark.ColumnName))
+            var errorOutput = new ErrorOutput();
+            var algoOutput = new ALgoOutput();
+
+            if (benchmark.ColumnName == null)
                 return BadRequest("Column name of actual values required!");
 
             _logger.LogInformation($"Column name: {benchmark.ColumnName}");
 
-            var cachedForecast = await _getf.GetForecastValuesByColumnName(
-                benchmark.ColumnName,
-                benchmark.LogTransform?.Trim().ToLower() == "yes",
-                benchmark.AlgoType
-            );
-
-            if (cachedForecast != null)
-            {
-                var cachedError = await _getErr.GetErrorOutputsById(cachedForecast.Id);
-                return Ok(new { algoOutput = cachedForecast, errorOutput = cachedError });
-            }
-
             var data = await _get.ActualValues(benchmark.ColumnName);
-            if (data?.ActualValues == null || !data.ActualValues.Any())
+
+            if (data.ActualValues == null || data.ActualValues.Count == 0)
                 return NotFound("No data found with that column name...");
 
-            bool isLogTransformed = benchmark.LogTransform?.Trim().ToLower() == "yes";
-            var actualValues = isLogTransformed ? _process.LogTransformation(data.ActualValues) : data.ActualValues;
+            _logger.LogInformation($"Data: {data.ActualValues.Count}");
+            _logger.LogInformation($"Data Id: {data.Id}");
 
-            var splitData = _TrainTest.SplitDataTwo(actualValues);
-            _logger.LogInformation($"Training Data: {splitData.Train.Count}, Test Data: {splitData.Test.Count}");
+            bool isLogTransformed = false;
+            if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                isLogTransformed = true;
+            else
+                isLogTransformed = false;
 
-            ALgoOutput result;
-            ErrorOutput error1 = new(), error2 = new(), error3 = new();
+            List<decimal> LogValues = new();
 
-            switch (benchmark.AlgoType.Trim().ToLower())
+            if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                LogValues = _process.LogTransformation(data.ActualValues);
+            else
+                LogValues = data.ActualValues;
+
+            var ActualValues = _TrainTest.SplitDataTwo(LogValues);
+
+            _logger.LogInformation($"Training Data: {ActualValues.Train.Count}, Test Data: {ActualValues.Test.Count}");
+
+            var error1 = new ErrorOutput();
+            var error2 = new ErrorOutput();
+            var error3 = new ErrorOutput();
+
+            if (benchmark.AlgoType.Trim().ToLower() == "ses")
+                benchmark.SeasonLength = 1;
+
+            int seasonLength = benchmark.SeasonLength;
+
+            var optimizedHwes = _search.GridSearchHWES(ActualValues.Train, seasonLength);
+
+            var hwesParams = new HwesParams
+            {
+                Alpha = optimizedHwes.alpha,
+                Beta = optimizedHwes.beta,
+                Gamma = optimizedHwes.gamma,
+                SeasonLength = seasonLength,
+                ActualValues = ActualValues.Train,
+                ForecasHorizon = ActualValues.Test.Count,
+                SeasonalValues = new List<decimal>(),
+                TrendValues = new List<decimal>(),
+                LevelValues = new List<decimal>(),
+                PredictionValues = new List<decimal>(),
+                AddPrediction = "yes"
+            };
+
+            var gasParams = new GasRequest
+            {
+                ColumnName = data.ColumnName,
+                AddPrediction = "yes"
+            };
+
+
+            var result = new ALgoOutput();
+
+            List<decimal> backfData = new();
+            List<decimal> backfData2 = new();
+            List<decimal> backfData3 = new();
+
+            List<decimal> backData = new();
+            var input = benchmark.AlgoType.Trim().ToLower();
+
+            switch (input)
             {
                 case "ses":
-                    benchmark.SeasonLength = 1;
-                    var alpha = _search.GenerateOptimalAlpha(splitData.Train);
-                    result = _ses.SesForecast(alpha, splitData.Train, splitData.Test.Count);
+                    var optimize = _search.GenerateOptimalAlpha(ActualValues.Train);
+                    result = _ses.SesForecast(optimize, ActualValues.Train, ActualValues.Test.Count);
                     break;
 
                 case "hwes":
-                    var optimizedHwes = _search.GridSearchHWES(splitData.Train, benchmark.SeasonLength);
-                    var hwesParams = new HwesParams
-                    {
-                        Alpha = optimizedHwes.alpha,
-                        Beta = optimizedHwes.beta,
-                        Gamma = optimizedHwes.gamma,
-                        SeasonLength = benchmark.SeasonLength,
-                        ActualValues = splitData.Train,
-                        ForecasHorizon = splitData.Test.Count
-                    };
                     result = _hwes.TrainForecast(hwesParams);
                     break;
 
                 case "gas":
-                    var gasParams = new GasRequest { ColumnName = data.ColumnName, AddPrediction = "yes" };
-                    var hwesParamsForGas = new HwesParams
+                    result = _gas.ApplyMtGas(hwesParams, gasParams);
+
+                    if (benchmark.LogTransform.Trim().ToLower() == "yes")
                     {
-                        Alpha = 0,
-                        Beta = 0,
-                        Gamma = 0,
-                        SeasonLength = benchmark.SeasonLength,
-                        ActualValues = splitData.Train,
-                        ForecasHorizon = splitData.Test.Count
+                        backfData = _process.BackLogTransform(result.PredictionValues);
+                        backfData2 = _process.BackLogTransform(result.PredictionValues2);
+                        backfData3 = _process.BackLogTransform(result.PreditionValuesAverage);
+
+                        backData = _process.BackLogTransform(ActualValues.Test);
+                    }
+                    else
+                    {
+                        backfData = result.PredictionValues;
+                        backfData2 = result.PredictionValues2;
+                        backfData3 = result.PreditionValuesAverage;
+
+                        backData = ActualValues.Test;
+                    }
+                    var errorParam = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData
                     };
-                    result = _gas.ApplyMtGas(hwesParamsForGas, gasParams);
 
-                    // Back-transform if log
-                    List<decimal> backTest = isLogTransformed ? _process.BackLogTransform(splitData.Test) : splitData.Test;
-                    List<decimal> pred1 = isLogTransformed ? _process.BackLogTransform(result.PredictionValues) : result.PredictionValues;
-                    List<decimal> pred2 = isLogTransformed ? _process.BackLogTransform(result.PredictionValues2) : result.PredictionValues2;
-                    List<decimal> predAvg = isLogTransformed ? _process.BackLogTransform(result.PreditionValuesAverage) : result.PreditionValuesAverage;
+                    var errorParam2 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData2
+                    };
 
-                    error1 = _error.EvaluateAlgoErrors(new ErrorEvaluate { ActualValues = backTest, ForecastValues = pred1 });
-                    error2 = _error.EvaluateAlgoErrors(new ErrorEvaluate { ActualValues = backTest, ForecastValues = pred2 });
-                    error3 = _error.EvaluateAlgoErrors(new ErrorEvaluate { ActualValues = backTest, ForecastValues = predAvg });
+
+                    var errorParam3 = new ErrorEvaluate
+                    {
+                        ActualValues = backData,
+                        ForecastValues = backfData3
+                    };
+
+                    error1 = _error.EvaluateAlgoErrors(errorParam);
+                    error2 = _error.EvaluateAlgoErrors(errorParam2);
+                    error3 = _error.EvaluateAlgoErrors(errorParam3);
                     break;
 
                 default:
-                    return NotFound("Invalid AlgoType");
+                    return NotFound("404!");
+
             }
 
-            var algoOutput = new ALgoOutput
+            if (input == "hwes" || input == "ses" && input != "gas")
+            {
+                if (benchmark.LogTransform.Trim().ToLower() == "yes")
+                {
+                    backfData = _process.BackLogTransform(result.PredictionValues);
+                    backData = _process.BackLogTransform(ActualValues.Test);
+                }
+                else
+                {
+                    backfData = result.PredictionValues;
+                    backData = ActualValues.Test;
+                }
+
+                var errorParams = new ErrorEvaluate
+                {
+                    ActualValues = backfData,
+                    ForecastValues = backData
+                };
+
+                error1 = _error.EvaluateAlgoErrors(errorParams);
+            }
+
+            algoOutput = new ALgoOutput
             {
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
-                ForecastValues = splitData.Test,
-                PredictionValues = result.PredictionValues,
-                PredictionValues2 = result.PredictionValues2,
-                PreditionValuesAverage = result.PreditionValuesAverage,
+                ForecastValues = backData,
+                PredictionValues = backfData,
+                PredictionValues2 = backfData2,
+                PreditionValuesAverage = backfData3,
                 AlphaSes = result.AlphaSes,
                 AlphaHwes = result.AlphaHwes,
                 Beta = result.Beta,
@@ -147,15 +223,17 @@ public class BenchmarkController : ControllerBase
                 SeasonLength = result.SeasonLength,
                 DatePredicted = DateTime.Now,
                 IsLogTransformed = isLogTransformed,
-                TotalCount = result.PredictionValues.Count + result.PredictionValues2.Count + result.PreditionValuesAverage.Count
+                TotalCount = result.PredictionValues.Count + result.PredictionValues2.Count
+                + result.PreditionValuesAverage.Count
             };
-
-            var errorOutput = new ErrorOutput
+            // var entity = await _save.SaveDatas(algoOutput);
+            // algoOutput.Id = entity.Id;
+            errorOutput = new ErrorOutput
             {
                 ForecastID = algoOutput.Id,
                 AlgoType = result.AlgoType,
                 ColumnName = data.ColumnName,
-                isLogTransformed = isLogTransformed,
+                isLogTransformed = algoOutput.IsLogTransformed,
                 MAE = error1.MAE,
                 MSE = error1.MSE,
                 MAPE = error1.MAPE,
@@ -167,18 +245,21 @@ public class BenchmarkController : ControllerBase
                 MAE3 = error3.MAE,
                 MSE3 = error3.MSE,
                 MAPE3 = error3.MAPE,
-                RMSE3 = error3.RMSE
+                RMSE3 = error3.RMSE,
             };
 
-            // Optional: save to database/cache
+            // await _save.SaveErrorData(errorOutput);
 
-            return Ok(new { algoOutput, errorOutput });
+            return Ok(new
+            {
+                algoOutput,
+                errorOutput
+            });
+
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error running forecast");
-            return BadRequest(new { response = ex.Message });
+            return BadRequest(new { response = $"{ex.Message}!" });
         }
     }
-
 }
