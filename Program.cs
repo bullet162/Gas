@@ -30,6 +30,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache(); //new feature replaces database hehe
+builder.Services.AddHealthChecks();
 builder.Services.AddScoped<ISes, ForecastSes>();
 builder.Services.AddScoped<IGetData, Data>();
 builder.Services.AddScoped<ISaveData, SaveData>();
@@ -96,5 +97,7 @@ app.UseCors("AllowAll");       // CORS before routing
 // app.UseAuthorization();     
 
 app.MapControllers();          // Routes controllers
+app.MapHealthChecks("/heathz");
+
 
 app.Run();
