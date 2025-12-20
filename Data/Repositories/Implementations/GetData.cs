@@ -62,13 +62,11 @@ public class Data : IGetData
 
         string key = columnName.Trim().ToLower();
 
-        // Try to get from cache first
         if (_CacheKeys.CacheKeys.Contains(key) && _cache.TryGetValue(key, out RawDataOutput? cachedData))
         {
             return cachedData!;
         }
 
-        // If not in cache, fetch from database
         var data = await _DbContext.GetActualValues
             .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == key)
             .Select(x => new RawDataOutput
@@ -86,7 +84,6 @@ public class Data : IGetData
         if (data == null)
             throw new ArgumentException("Invalid or insufficient data.");
 
-        // Optionally cache the result for future requests
         _cache.Set(key, data, TimeSpan.FromMinutes(20));
         _CacheKeys.CacheKeys.Add(key);
 
