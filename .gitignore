@@ -69,3 +69,6 @@ appsettings.Development.json
 frontend/dist/
 frontend/node_modules/
 
+
+# Firebase CLI cache
+.firebase/
