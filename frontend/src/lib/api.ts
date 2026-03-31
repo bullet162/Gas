@@ -89,7 +89,7 @@ export async function uploadCsvForColumns(file: File): Promise<string[]> {
 export async function uploadCsvActualValues(file: File, columnName: string): Promise<void> {
   const form = new FormData()
   form.append('File', file)
-  form.append('ColumnName', columnName)
+  form.append('SColumnName', columnName)  // must match SelectedColumnName.SColumnName on backend
   const res = await fetch(API.uploadActualValues, { method: 'POST', body: form })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: `Upload failed (${res.status})` }))
