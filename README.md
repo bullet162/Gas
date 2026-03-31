@@ -141,6 +141,18 @@ The `stable-backend` branch is connected to Render auto-deploy. Pushing to `main
 ├── Dto/                # Request/response models
 ├── Migrations/         # EF Core PostgreSQL migrations
 ├── Utils/              # CSV parser, stopwatch
+├── frontend/           # Svelte + Vite SPA
+│   ├── src/
+│   │   ├── lib/        # Components, api.ts, store.ts
+│   │   ├── App.svelte
+│   │   └── main.ts
+│   └── vite.config.ts
+├── .github/workflows/
+│   ├── deploy.yml      # Firebase frontend deploy
+│   ├── keepalive.yml   # Render ping Mon–Fri 6am–5pm PHT
+│   └── sync-stable.yml # main → stable-backend mirror
+├── firebase.json
+├── .firebaserc
 └── Program.cs
 ```
 

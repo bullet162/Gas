@@ -65,3 +65,7 @@ appsettings.Development.json
 # EF Core design-time only
 # (keep migrations, ignore nothing extra here)
 
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+
