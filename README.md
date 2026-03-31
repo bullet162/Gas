@@ -10,7 +10,7 @@ ASP.NET Core 8 Web API powering the Guided-Adaptive Smoothing (GAS) forecasting 
 
 **Adviser:** Dr. Ricardo Q. Camungao
 
-**Institution:** College of Computing Studies, ICT — Isabela State University, Echague Campus
+**Institution:** CCSICT — Isabela State University, Echague Campus
 
 ---
 
