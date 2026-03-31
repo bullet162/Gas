@@ -30,7 +30,7 @@ public class ForecastValues
     [Key]
     public int Id { get; set; }
 
-    [Column(TypeName = "decimal(18,9)")]
+    [Column(TypeName = "numeric(18,9)")]
     public decimal ForecastValue { get; set; }
 
     [ForeignKey("GetForecastDescription5")]
@@ -43,7 +43,7 @@ public class PredictionValues
     [Key]
     public int Id { get; set; }
 
-    [Column(TypeName = "decimal(18,9)")]
+    [Column(TypeName = "numeric(18,9)")]
     public decimal PredictionValue { get; set; }
 
     [ForeignKey("ForecastDescription")]
@@ -56,7 +56,7 @@ public class PredictionValues2
     [Key]
     public int Id { get; set; }
 
-    [Column(TypeName = "decimal(18,9)")]
+    [Column(TypeName = "numeric(18,9)")]
     public decimal PredictionValue2 { get; set; }
 
     [ForeignKey("ForecastDescription")]
@@ -69,7 +69,7 @@ public class PredictionValues3
     [Key]
     public int Id { get; set; }
 
-    [Column(TypeName = "decimal(18,9)")]
+    [Column(TypeName = "numeric(18,9)")]
     public decimal PredictionValue3 { get; set; }
 
     [ForeignKey("ForecastDescription")]

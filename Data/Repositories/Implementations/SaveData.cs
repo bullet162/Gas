@@ -2,7 +2,6 @@ using ForecastingGas.Data.Entities;
 using ForecastingGas.Data.Repositories.Interfaces;
 using ForecastingGas.Dto.Requests;
 using ForecastingGas.Dto.Responses;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ForecastingGas.Data.Repositories.Implementations;
@@ -12,26 +11,21 @@ public class SaveData : ISaveData
     private readonly AppDbContext _DB;
     private readonly IMemoryCache _cache;
     private readonly RawDataCache _CacheKeys;
-    public SaveData(AppDbContext appDbContext, IMemoryCache cache, RawDataCache CacheKeys)
+
+    public SaveData(AppDbContext appDbContext, IMemoryCache cache, RawDataCache cacheKeys)
     {
         _DB = appDbContext;
         _cache = cache;
-        _CacheKeys = CacheKeys;
+        _CacheKeys = cacheKeys;
     }
 
-
-    //save actualValues
     public async Task<bool> SaveRawData(RawDataOutput dataOutput)
     {
-
-        string cacheKey = $"{dataOutput.ColumnName.Trim().ToLower()}";
-
-        _cache.Set(cacheKey, dataOutput, TimeSpan.FromMinutes(20));
-        _CacheKeys.CacheKeys.Add(cacheKey);
+        string cacheKey = dataOutput.ColumnName.Trim().ToLower();
 
         try
         {
-            var result = new DataDescription
+            var entity = new DataDescription
             {
                 ColumnName = dataOutput.ColumnName,
                 TotalCount = dataOutput.TotalCount,
@@ -41,10 +35,13 @@ public class SaveData : ISaveData
                 }).ToList()
             };
 
-            await _DB.AddAsync(result);
+            await _DB.AddAsync(entity);
             await _DB.SaveChangesAsync();
 
-            _cache.Remove(cacheKey);
+            // Cache after successful DB save with the DB-assigned ID
+            dataOutput.Id = entity.Id;
+            _cache.Set(cacheKey, dataOutput, TimeSpan.FromMinutes(30));
+            _CacheKeys.Add(cacheKey);
 
             return true;
         }
@@ -53,6 +50,4 @@ public class SaveData : ISaveData
             return false;
         }
     }
-
-
 }

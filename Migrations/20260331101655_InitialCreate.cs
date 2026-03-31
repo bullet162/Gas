@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -15,11 +16,11 @@ namespace forecastingGas.Migrations
                 name: "GetDataDescriptions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TotalCount = table.Column<int>(type: "int", nullable: false),
-                    DateUploaded = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ColumnName = table.Column<string>(type: "text", nullable: false),
+                    TotalCount = table.Column<int>(type: "integer", nullable: false),
+                    DateUploaded = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,19 +31,19 @@ namespace forecastingGas.Migrations
                 name: "GetForecastDescriptions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    isLogTransformed = table.Column<bool>(type: "bit", nullable: false),
-                    AlgoType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ForecastDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TotalCount = table.Column<int>(type: "int", nullable: false),
-                    AlphaSes = table.Column<double>(type: "float", nullable: false),
-                    AlphaHwes = table.Column<double>(type: "float", nullable: false),
-                    Beta = table.Column<double>(type: "float", nullable: false),
-                    Gamma = table.Column<double>(type: "float", nullable: false),
-                    SeasonLength = table.Column<int>(type: "int", nullable: false),
-                    TimeComputed = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    isLogTransformed = table.Column<bool>(type: "boolean", nullable: false),
+                    AlgoType = table.Column<string>(type: "text", nullable: false),
+                    ColumnName = table.Column<string>(type: "text", nullable: false),
+                    ForecastDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TotalCount = table.Column<int>(type: "integer", nullable: false),
+                    AlphaSes = table.Column<double>(type: "double precision", nullable: false),
+                    AlphaHwes = table.Column<double>(type: "double precision", nullable: false),
+                    Beta = table.Column<double>(type: "double precision", nullable: false),
+                    Gamma = table.Column<double>(type: "double precision", nullable: false),
+                    SeasonLength = table.Column<int>(type: "integer", nullable: false),
+                    TimeComputed = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -53,10 +54,10 @@ namespace forecastingGas.Migrations
                 name: "GetActualValues",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ActualValue = table.Column<decimal>(type: "decimal(38,9)", nullable: false),
-                    DataDescriptionID = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ActualValue = table.Column<decimal>(type: "numeric(38,9)", nullable: false),
+                    DataDescriptionID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,31 +74,31 @@ namespace forecastingGas.Migrations
                 name: "GetErrorValues",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ForecastDescriptionIdError = table.Column<int>(type: "int", nullable: false),
-                    ColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AlgoType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    isLogTransformed = table.Column<bool>(type: "bit", nullable: false),
-                    DateEvaluated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RMSE = table.Column<double>(type: "float", nullable: false),
-                    MAE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    RMSE2 = table.Column<double>(type: "float", nullable: false),
-                    MAE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    RMSE3 = table.Column<double>(type: "float", nullable: false),
-                    MAE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MAPE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    MSE3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ForecastDescriptionIdError = table.Column<int>(type: "integer", nullable: false),
+                    ColumnName = table.Column<string>(type: "text", nullable: false),
+                    AlgoType = table.Column<string>(type: "text", nullable: false),
+                    isLogTransformed = table.Column<bool>(type: "boolean", nullable: false),
+                    DateEvaluated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    RMSE = table.Column<double>(type: "double precision", nullable: false),
+                    MAE = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MAPE = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MSE = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    RMSE2 = table.Column<double>(type: "double precision", nullable: false),
+                    MAE2 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MAPE2 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MSE2 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    RMSE3 = table.Column<double>(type: "double precision", nullable: false),
+                    MAE3 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MAPE3 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    MSE3 = table.Column<decimal>(type: "numeric(18,9)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GetErrorValues", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GetErrorValues_GetForecastDescriptions_ForecastDescriptionIdError",
+                        name: "FK_GetErrorValues_GetForecastDescriptions_ForecastDescriptionI~",
                         column: x => x.ForecastDescriptionIdError,
                         principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",
@@ -108,16 +109,16 @@ namespace forecastingGas.Migrations
                 name: "GetForecastValues",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ForecastValue = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    ForecastDescriptionID = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ForecastValue = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    ForecastDescriptionID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GetForecastValues", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GetForecastValues_GetForecastDescriptions_ForecastDescriptionID",
+                        name: "FK_GetForecastValues_GetForecastDescriptions_ForecastDescripti~",
                         column: x => x.ForecastDescriptionID,
                         principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",
@@ -128,16 +129,16 @@ namespace forecastingGas.Migrations
                 name: "GetPredictionValues",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PredictionValue = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    ForecastDescriptionID2 = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PredictionValue = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    ForecastDescriptionID2 = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GetPredictionValues", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GetPredictionValues_GetForecastDescriptions_ForecastDescriptionID2",
+                        name: "FK_GetPredictionValues_GetForecastDescriptions_ForecastDescrip~",
                         column: x => x.ForecastDescriptionID2,
                         principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",
@@ -148,16 +149,16 @@ namespace forecastingGas.Migrations
                 name: "GetPredictionValues2",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PredictionValue2 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    ForecastDescriptionID3 = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PredictionValue2 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    ForecastDescriptionID3 = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GetPredictionValues2", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GetPredictionValues2_GetForecastDescriptions_ForecastDescriptionID3",
+                        name: "FK_GetPredictionValues2_GetForecastDescriptions_ForecastDescri~",
                         column: x => x.ForecastDescriptionID3,
                         principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",
@@ -168,16 +169,16 @@ namespace forecastingGas.Migrations
                 name: "GetPredictionValues3",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PredictionValue3 = table.Column<decimal>(type: "decimal(18,9)", nullable: false),
-                    ForecastDescriptionID4 = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PredictionValue3 = table.Column<decimal>(type: "numeric(18,9)", nullable: false),
+                    ForecastDescriptionID4 = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GetPredictionValues3", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GetPredictionValues3_GetForecastDescriptions_ForecastDescriptionID4",
+                        name: "FK_GetPredictionValues3_GetForecastDescriptions_ForecastDescri~",
                         column: x => x.ForecastDescriptionID4,
                         principalTable: "GetForecastDescriptions",
                         principalColumn: "Id",

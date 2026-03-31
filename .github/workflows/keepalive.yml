@@ -1,0 +1,23 @@
+name: Keepalive — Render Backend
+
+on:
+  schedule:
+    # Every 10 minutes, Monday–Friday, 6am–5pm Philippine Time (UTC+8)
+    # PHT 06:00 = UTC 22:00 (previous day), PHT 17:00 = UTC 09:00
+    # Cron runs in UTC: 22:00–23:59 Sun–Thu + 00:00–09:00 Mon–Fri
+    - cron: "*/10 22-23 * * 0-4"   # Sun–Thu 22:00–23:59 UTC (Mon–Fri 06:00–07:59 PHT)
+    - cron: "*/10 0-9  * * 1-5"    # Mon–Fri 00:00–09:00 UTC (Mon–Fri 08:00–17:00 PHT)
+  workflow_dispatch:                 # allow manual trigger
+
+jobs:
+  ping:
+    name: Ping Render backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/ping
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://gasbackend.onrender.com/api/ping)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Warning: backend returned $STATUS"
+          fi

@@ -58,3 +58,10 @@ nunit-*.xml
 appsettings.Development.json
 #appsettings.Production.json
 
+# Visual Studio IDE files
+.vs/
+*.user
+
+# EF Core design-time only
+# (keep migrations, ignore nothing extra here)
+

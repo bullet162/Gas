@@ -65,7 +65,7 @@ public class AppDbContext : DbContext
 
     modelBuilder.Entity<ForecastDescription>()
       .Property(f => f.isLogTransformed)
-      .HasColumnType("bit");
+      .HasColumnType("boolean");
 
   }
 }

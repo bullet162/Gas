@@ -11,6 +11,7 @@ public class Data : IGetData
     private readonly AppDbContext _DbContext;
     private readonly IMemoryCache _cache;
     private readonly RawDataCache _CacheKeys;
+
     public Data(AppDbContext appDbContext, IMemoryCache cache, RawDataCache rawDataCache)
     {
         _DbContext = appDbContext;
@@ -18,81 +19,75 @@ public class Data : IGetData
         _CacheKeys = rawDataCache;
     }
 
-    //Get all ColumnName and id
     public async Task<List<RawDataOutput>> GetAllColumnNamesAndId()
     {
-
-        try
+        // Try cache first
+        var list = new List<RawDataOutput>();
+        foreach (var key in _CacheKeys.Keys)
         {
-            var list = new List<RawDataOutput>();
-            foreach (var key in _CacheKeys.CacheKeys)
-            {
-                if (_cache.TryGetValue(key, out RawDataOutput? cachedData))
-                    list.Add(cachedData!);
-            }
-            return list;
+            if (_cache.TryGetValue(key, out RawDataOutput? cachedData) && cachedData != null)
+                list.Add(cachedData);
         }
-        catch
-        {
-            var result = await _DbContext.GetDataDescriptions
+
+        if (list.Count > 0)
+            return list;
+
+        // Cache miss — fall back to DB
+        var result = await _DbContext.GetDataDescriptions
             .Select(x => new RawDataOutput
             {
                 Id = x.Id,
                 ColumnName = x.ColumnName,
                 TotalCount = x.TotalCount,
                 DateOfEntry = x.DateUploaded,
-                ActualValues = x.ActualValues.Select(x => x.ActualValue).ToList()
+                ActualValues = x.ActualValues.Select(a => a.ActualValue).ToList()
             })
             .OrderBy(x => x.DateOfEntry)
             .ThenBy(x => x.Id)
             .ToListAsync();
 
-            if (result == null || !result.Any())
-                return new List<RawDataOutput>();
-
-            return result;
+        // Repopulate cache from DB results
+        foreach (var item in result)
+        {
+            var key = item.ColumnName.Trim().ToLower();
+            _cache.Set(key, item, TimeSpan.FromMinutes(30));
+            _CacheKeys.Add(key);
         }
+
+        return result;
     }
 
-    //Get ColumnName and ActualValues by columnName
     public async Task<RawDataOutput> ActualValues(string columnName)
     {
         if (string.IsNullOrEmpty(columnName))
-            throw new ArgumentNullException("Column name cannot be null or empty.");
+            throw new ArgumentNullException(nameof(columnName), "Column name cannot be null or empty.");
 
         string key = columnName.Trim().ToLower();
 
-        RawDataOutput rawData = new();
-        if (_CacheKeys.CacheKeys.Contains(key) && _cache.TryGetValue(key, out RawDataOutput? cachedData))
-        {
-            rawData = cachedData!;
-            return cachedData!;
-        }
+        // Try cache first
+        if (_CacheKeys.Contains(key) && _cache.TryGetValue(key, out RawDataOutput? cachedData) && cachedData != null)
+            return cachedData;
 
-        return rawData;
+        // Cache miss — query DB
+        var data = await _DbContext.GetDataDescriptions
+            .Where(x => x.ColumnName.Trim().ToLower() == key)
+            .Select(x => new RawDataOutput
+            {
+                Id = x.Id,
+                ActualValues = x.ActualValues.Select(a => a.ActualValue).ToList(),
+                ColumnName = x.ColumnName,
+                TotalCount = x.TotalCount,
+                DateOfEntry = x.DateUploaded
+            })
+            .OrderByDescending(x => x.DateOfEntry)
+            .FirstOrDefaultAsync();
 
-        // var data = await _DbContext.GetActualValues
-        //     .Where(x => x.GetDataDescription.ColumnName.Trim().ToLower() == key)
-        //     .Select(x => new RawDataOutput
-        //     {
-        //         Id = x.GetDataDescription.Id,
-        //         ActualValues = x.GetDataDescription.ActualValues.Select(a => a.ActualValue).ToList(),
-        //         ColumnName = x.GetDataDescription.ColumnName,
-        //         TotalCount = x.GetDataDescription.TotalCount,
-        //         DateOfEntry = x.GetDataDescription.DateUploaded
-        //     })
-        //     .OrderByDescending(x => x.DateOfEntry)
-        //     .ThenBy(x => x.Id)
-        //     .FirstOrDefaultAsync();
+        if (data == null)
+            throw new ArgumentException($"No data found for column '{columnName}'.");
 
-        // if (data == null)
-        //     throw new ArgumentException("Invalid or insufficient data.");
+        _cache.Set(key, data, TimeSpan.FromMinutes(30));
+        _CacheKeys.Add(key);
 
-        // _cache.Set(key, data, TimeSpan.FromMinutes(20));
-        // _CacheKeys.CacheKeys.Add(key);
-
-        // return data;
+        return data;
     }
-
-
 }

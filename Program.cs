@@ -17,6 +17,7 @@ using ForecastingGas.Algorithm;
 using ForecastingGas.Utils;
 using ForecastingGas.Algorithm.Gas;
 using ForecastingGas.Dto.Requests;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,16 +52,36 @@ builder.Services.AddScoped<IProcessing, Processing>();
 builder.Services.AddSingleton<RawDataCache>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions =>
+{
+    var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("No database connection string found.");
+
+    // Neon uses a postgres:// URI — convert if needed
+    if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+    {
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+        options.UseNpgsql(dataSourceBuilder.Build(), npgsqlOptions =>
         {
-            sqlOptions.EnableRetryOnFailure(
+            npgsqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 5,
                 maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorNumbersToAdd: null
+                errorCodesToAdd: null
             );
-        }));
+        });
+    }
+    else
+    {
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null
+            );
+        });
+    }
+});
 
 
 builder.Services.AddCors(options =>
