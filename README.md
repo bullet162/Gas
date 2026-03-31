@@ -109,14 +109,23 @@ Set on Render dashboard — never commit to source:
 
 ## Deployment
 
-The `stable-backend` branch is connected to Render auto-deploy. Pushing to `main` automatically syncs to `stable-backend` via GitHub Actions (`sync-stable.yml`).
+Render auto-deploys from the `main` branch using the `Dockerfile`. Set the `DATABASE_URL` environment variable in the Render dashboard — never commit it.
+
+### Render Environment Variables
+
+Go to your Render service → Environment → Add the following:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | `postgresql://neondb_owner:<password>@ep-round-sun-a1pq3far-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require` |
+
+Render sets `PORT` automatically — the Dockerfile reads it at runtime.
 
 ### Branches
 
 | Branch | Purpose |
 |---|---|
-| `main` | Development, latest changes |
-| `stable-backend` | Production — auto-deploys to Render |
+| `main` | Single branch — Render auto-deploys from here |
 
 ---
 
@@ -124,7 +133,7 @@ The `stable-backend` branch is connected to Render auto-deploy. Pushing to `main
 
 | Workflow | Trigger | Description |
 |---|---|---|
-| `sync-stable.yml` | Push to `main` | Mirrors `main` → `stable-backend` |
+| `deploy.yml` | Push to `main` | Builds Svelte frontend and deploys to Firebase Hosting |
 | `keepalive.yml` | Cron (Mon–Fri 6am–5pm PHT) | Pings `/api/ping` every 10 min to prevent Render cold starts |
 
 ---
