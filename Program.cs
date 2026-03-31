@@ -17,7 +17,24 @@ using ForecastingGas.Algorithm;
 using ForecastingGas.Utils;
 using ForecastingGas.Algorithm.Gas;
 using ForecastingGas.Dto.Requests;
-using Npgsql;
+
+static string ToNpgsqlConnectionString(string uri)
+{
+    if (!uri.StartsWith("postgres://") && !uri.StartsWith("postgresql://"))
+        return uri;
+
+    var u = new Uri(uri);
+    var userInfo = u.UserInfo.Split(':');
+    var user = Uri.UnescapeDataString(userInfo[0]);
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var host = u.Host;
+    var port = u.Port > 0 ? u.Port : 5432;
+    var database = u.AbsolutePath.TrimStart('/');
+    var query = System.Web.HttpUtility.ParseQueryString(u.Query);
+    var sslmode = query["sslmode"] ?? "require";
+
+    return $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode={sslmode};Trust Server Certificate=true";
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,30 +74,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         ?? builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("No database connection string found.");
 
-    // Neon uses a postgres:// URI — convert if needed
-    if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+    options.UseNpgsql(ToNpgsqlConnectionString(connectionString), npgsqlOptions =>
     {
-        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-        options.UseNpgsql(dataSourceBuilder.Build(), npgsqlOptions =>
-        {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorCodesToAdd: null
-            );
-        });
-    }
-    else
-    {
-        options.UseNpgsql(connectionString, npgsqlOptions =>
-        {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorCodesToAdd: null
-            );
-        });
-    }
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null
+        );
+    });
 });
 
 
@@ -112,10 +113,23 @@ else
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Auto-apply pending migrations on startup (handles Render cold deploys)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Migration failed on startup — check DATABASE_URL is set.");
+    }
+}
 
-app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");       // CORS before routing
+app.UseCors("AllowAll");
 
 // app.UseAuthorization();     
 

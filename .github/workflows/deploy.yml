@@ -38,3 +38,4 @@ jobs:
           projectId: guided-adaptive-smoothing
           target: gas-app-algorithm
           channelId: live
+          firebaseToolsVersion: latest
