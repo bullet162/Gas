@@ -1,5 +1,8 @@
 name: Keepalive — Render Backend
 
+permissions:
+  contents: read
+
 on:
   schedule:
     # Every 10 minutes, Monday–Friday, 6am–5pm Philippine Time (UTC+8)

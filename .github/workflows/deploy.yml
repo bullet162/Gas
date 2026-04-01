@@ -10,6 +10,8 @@ jobs:
   build-and-deploy:
     name: Build Svelte + Deploy to Firebase
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
