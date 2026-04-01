@@ -20,6 +20,7 @@ export interface ColumnData {
 }
 
 export interface ForecastResult {
+  // flat fields (prediction endpoint returns ALgoOutput directly)
   algoType: string
   columnName: string
   alphaSes: number
@@ -30,10 +31,12 @@ export interface ForecastResult {
   predictionValues: number[]
   predictionValues2?: number[]
   preditionValuesAverage?: number[]
-  mse: number
-  mae: number
-  mape: number
-  rmse: number
+  timeComputed: string
+  // error metrics (flat — used when prediction endpoint embeds them)
+  mse?: number
+  mae?: number
+  mape?: number
+  rmse?: number
   mse2?: number
   mae2?: number
   mape2?: number
@@ -42,13 +45,64 @@ export interface ForecastResult {
   mae3?: number
   mape3?: number
   rmse3?: number
-  timeComputed: string
+  // nested shape returned by /forecast endpoint
+  algoOutput?: {
+    algoType: string
+    columnName: string
+    alphaSes: number
+    alphaHwes: number
+    beta: number
+    gamma: number
+    forecastValues: number[]
+    predictionValues: number[]
+    predictionValues2?: number[]
+    preditionValuesAverage?: number[]
+    timeComputed: string
+  }
+  errorOutput?: {
+    mse: number
+    mae: number
+    mape: number
+    rmse: number
+    mse2?: number
+    mae2?: number
+    mape2?: number
+    rmse2?: number
+    mse3?: number
+    mae3?: number
+    mape3?: number
+    rmse3?: number
+  }
 }
 
 export async function fetchColumns(): Promise<ColumnData[]> {
   const res = await fetch(API.columnNames)
   if (!res.ok) throw new Error(`Failed to load columns (${res.status})`)
   return res.json()
+}
+
+/** Flatten the nested { algoOutput, errorOutput } shape from /forecast into ForecastResult */
+function normalizeForecast(raw: any): ForecastResult {
+  if (raw.algoOutput) {
+    const a = raw.algoOutput
+    const e = raw.errorOutput ?? {}
+    return {
+      ...a,
+      mse: e.mse ?? e.MSE,
+      mae: e.mae ?? e.MAE,
+      rmse: e.rmse ?? e.RMSE,
+      mape: e.mape ?? e.MAPE,
+      mse2: e.mse2 ?? e.MSE2,
+      mae2: e.mae2 ?? e.MAE2,
+      rmse2: e.rmse2 ?? e.RMSE2,
+      mape2: e.mape2 ?? e.MAPE2,
+      mse3: e.mse3 ?? e.MSE3,
+      mae3: e.mae3 ?? e.MAE3,
+      rmse3: e.rmse3 ?? e.RMSE3,
+      mape3: e.mape3 ?? e.MAPE3,
+    } as ForecastResult
+  }
+  return raw as ForecastResult
 }
 
 export async function runForecast(payload: object): Promise<ForecastResult> {
@@ -61,7 +115,8 @@ export async function runForecast(payload: object): Promise<ForecastResult> {
     const err = await res.text()
     throw new Error(err || `Forecast failed (${res.status})`)
   }
-  return res.json()
+  const raw = await res.json()
+  return normalizeForecast(raw)
 }
 
 export async function runPrediction(payload: object, horizon: number): Promise<ForecastResult> {

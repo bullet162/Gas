@@ -69,7 +69,15 @@
 
   function buildChart(actual: number[], r: ForecastResult) {
     const len = actual.length
+    const predLen = r.predictionValues?.length ?? 0
+    const trainLen = len - predLen
     chartLabels = actual.map((_, i) => `P${i + 1}`)
+
+    // Pad predictions to align with test portion
+    const paddedPred = [...Array(trainLen).fill(null), ...(r.predictionValues?.map(Number) ?? [])]
+    const paddedHwes = r.predictionValues2
+      ? [...Array(trainLen).fill(null), ...r.predictionValues2.map(Number)]
+      : null
 
     chartDatasets = [
       {
@@ -83,7 +91,7 @@
       },
       {
         label: algo === 'gas' ? 'Weighted SES' : 'Forecast',
-        data: r.forecastValues?.map(Number) ?? [],
+        data: paddedPred,
         borderColor: '#10b981',
         backgroundColor: 'transparent',
         tension: 0.4, fill: false,
@@ -93,10 +101,10 @@
       },
     ]
 
-    if (algo === 'gas' && r.predictionValues2) {
+    if (algo === 'gas' && paddedHwes) {
       chartDatasets.push({
         label: 'Weighted HWES',
-        data: r.predictionValues2.map(Number),
+        data: paddedHwes,
         borderColor: '#06b6d4',
         backgroundColor: 'transparent',
         tension: 0.4, fill: false,
@@ -107,9 +115,9 @@
     }
   }
 
-  function formatNum(n: number | undefined) {
-    if (n === undefined || n === null) return '—'
-    return n.toFixed(4)
+  function formatNum(n: number | undefined | null) {
+    if (n === undefined || n === null || isNaN(Number(n))) return '—'
+    return Number(n).toFixed(4)
   }
 
   function getMetrics(r: ForecastResult) {
@@ -268,13 +276,19 @@
             </thead>
             <tbody>
               {#each $columns.find(c => c.columnName === colName)?.actualValues ?? [] as actual, i}
-                {@const forecast_val = result.forecastValues?.[i]}
+                {@const allActuals = $columns.find(c => c.columnName === colName)?.actualValues ?? []}
+                {@const totalLen = allActuals.length}
+                {@const predLen = result.predictionValues?.length ?? 0}
+                {@const trainLen = totalLen - predLen}
+                {@const predIdx = i - trainLen}
+                {@const forecast_val = predIdx >= 0 ? result.predictionValues?.[predIdx] : null}
+                {@const hwes_val = predIdx >= 0 ? result.predictionValues2?.[predIdx] : null}
                 {@const residual = forecast_val != null ? (Number(actual) - Number(forecast_val)).toFixed(4) : '—'}
                 <tr>
                   <td>{i + 1}</td>
                   <td>{Number(actual).toFixed(4)}</td>
                   <td>{forecast_val != null ? Number(forecast_val).toFixed(4) : '—'}</td>
-                  {#if algo === 'gas'}<td>{result.predictionValues2?.[i] != null ? Number(result.predictionValues2[i]).toFixed(4) : '—'}</td>{/if}
+                  {#if algo === 'gas'}<td>{hwes_val != null ? Number(hwes_val).toFixed(4) : '—'}</td>{/if}
                   <td class:neg={Number(residual) < 0}>{residual}</td>
                 </tr>
               {/each}
