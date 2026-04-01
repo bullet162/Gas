@@ -57,7 +57,11 @@ public class BenchmarkController : ControllerBase
             if (benchmark.ColumnName == null)
                 return BadRequest("Column name of actual values required!");
 
-            _logger.LogInformation($"Column name: {benchmark.ColumnName}");
+            var safeColumnName = benchmark.ColumnName
+                .Replace(Environment.NewLine, string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty);
+            _logger.LogInformation($"Column name: {safeColumnName}");
 
             var data = await _get.ActualValues(benchmark.ColumnName);
 
