@@ -1,6 +1,6 @@
 // All API calls — never expose DB credentials here, backend handles auth
 const BASE_URL = import.meta.env.DEV
-  ? ''  // proxied via vite dev server to localhost:5297
+  ? 'https://gasbackend.onrender.com'  // proxied via vite dev server to localhost:5297
   : 'https://gasbackend.onrender.com'
 
 export const API = {
