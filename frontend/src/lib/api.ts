@@ -86,20 +86,21 @@ function normalizeForecast(raw: any): ForecastResult {
   if (raw.algoOutput) {
     const a = raw.algoOutput
     const e = raw.errorOutput ?? {}
+    // backend serializes as camelCase: rmse, mse, mae, mape, rmsE2, msE2, maE2, mapE2 ...
     return {
       ...a,
-      mse: e.mse ?? e.MSE,
-      mae: e.mae ?? e.MAE,
-      rmse: e.rmse ?? e.RMSE,
-      mape: e.mape ?? e.MAPE,
-      mse2: e.mse2 ?? e.MSE2,
-      mae2: e.mae2 ?? e.MAE2,
-      rmse2: e.rmse2 ?? e.RMSE2,
-      mape2: e.mape2 ?? e.MAPE2,
-      mse3: e.mse3 ?? e.MSE3,
-      mae3: e.mae3 ?? e.MAE3,
-      rmse3: e.rmse3 ?? e.RMSE3,
-      mape3: e.mape3 ?? e.MAPE3,
+      mse:   e.mse   ?? e.MSE,
+      mae:   e.mae   ?? e.MAE,
+      rmse:  e.rmse  ?? e.RMSE,
+      mape:  e.mape  ?? e.MAPE,
+      mse2:  e.msE2  ?? e.mse2  ?? e.MSE2,
+      mae2:  e.maE2  ?? e.mae2  ?? e.MAE2,
+      rmse2: e.rmsE2 ?? e.rmse2 ?? e.RMSE2,
+      mape2: e.mapE2 ?? e.mape2 ?? e.MAPE2,
+      mse3:  e.msE3  ?? e.mse3  ?? e.MSE3,
+      mae3:  e.maE3  ?? e.mae3  ?? e.MAE3,
+      rmse3: e.rmsE3 ?? e.rmse3 ?? e.RMSE3,
+      mape3: e.mapE3 ?? e.mape3 ?? e.MAPE3,
     } as ForecastResult
   }
   return raw as ForecastResult

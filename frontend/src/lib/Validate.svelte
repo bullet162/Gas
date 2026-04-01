@@ -16,38 +16,36 @@
   let logTransform = 'no'
   let seasonLength = 0
   let showSeason = false
+  let showLast25 = false
 
   $: showSeason = algo === 'hwes' || algo === 'gas'
   $: if (!showSeason) seasonLength = 0
 
-  // Chart data
   let chartLabels: string[] = []
   let chartDatasets: any[] = []
+  let fullActuals: number[] = []
+  let fullPreds: number[] = []
+  let fullPreds2: number[] = []
 
-  onMount(async () => {
-    await loadColumns()
-  })
+  onMount(async () => { await loadColumns() })
 
   async function loadColumns() {
     try {
       loading = true
       const data = await fetchColumns()
       columns.set(data)
-    } catch (e: any) {
-      error = e.message
-    } finally {
-      loading = false
-    }
+    } catch (e: any) { error = e.message }
+    finally { loading = false }
   }
 
   async function forecast() {
     if (!colName) { error = 'Select a data column first.'; return }
     error = ''
     loading = true
+    showLast25 = false
     try {
       const col = $columns.find(c => c.columnName === colName)
       if (!col) throw new Error('Column not found.')
-
       const payload = {
         input: col.actualValues,
         algoType: algo,
@@ -55,44 +53,39 @@
         logTransform,
         seasonLength: algo === 'ses' ? 1 : seasonLength,
       }
-
       result = await runForecast(payload)
       lastForecastResult.set(result)
       selectedColumn.set(colName)
-      buildChart(col.actualValues.map(Number), result)
-    } catch (e: any) {
-      error = e.message
-    } finally {
-      loading = false
-    }
+      fullActuals = col.actualValues.map(Number)
+      fullPreds = result.predictionValues?.map(Number) ?? []
+      fullPreds2 = result.predictionValues2?.map(Number) ?? []
+      buildChart(fullActuals, fullPreds, fullPreds2)
+    } catch (e: any) { error = e.message }
+    finally { loading = false }
   }
 
-  function buildChart(actual: number[], r: ForecastResult) {
-    const len = actual.length
-    const predLen = r.predictionValues?.length ?? 0
+  function buildChart(actuals: number[], preds: number[], preds2: number[]) {
+    const len = actuals.length
+    const predLen = preds.length
     const trainLen = len - predLen
-    chartLabels = actual.map((_, i) => `P${i + 1}`)
-
-    // Pad predictions to align with test portion
-    const paddedPred = [...Array(trainLen).fill(null), ...(r.predictionValues?.map(Number) ?? [])]
-    const paddedHwes = r.predictionValues2
-      ? [...Array(trainLen).fill(null), ...r.predictionValues2.map(Number)]
-      : null
+    chartLabels = actuals.map((_, i) => `P${i + 1}`)
+    const padded = [...Array(trainLen).fill(null), ...preds]
+    const padded2 = preds2.length ? [...Array(trainLen).fill(null), ...preds2] : null
 
     chartDatasets = [
       {
         label: 'Actual',
-        data: actual,
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99,102,241,0.08)',
+        data: actuals,
+        borderColor: '#7b68ee',
+        backgroundColor: 'rgba(123,104,238,0.08)',
         tension: 0.4, fill: true,
         pointRadius: len > 100 ? 0 : 3,
         borderWidth: 2,
       },
       {
         label: algo === 'gas' ? 'Weighted SES' : 'Forecast',
-        data: paddedPred,
-        borderColor: '#10b981',
+        data: padded,
+        borderColor: '#00d4aa',
         backgroundColor: 'transparent',
         tension: 0.4, fill: false,
         borderDash: [4, 3],
@@ -100,12 +93,11 @@
         borderWidth: 1.5,
       },
     ]
-
-    if (algo === 'gas' && paddedHwes) {
+    if (algo === 'gas' && padded2) {
       chartDatasets.push({
         label: 'Weighted HWES',
-        data: paddedHwes,
-        borderColor: '#06b6d4',
+        data: padded2,
+        borderColor: '#fd79a8',
         backgroundColor: 'transparent',
         tension: 0.4, fill: false,
         borderDash: [4, 3],
@@ -115,36 +107,78 @@
     }
   }
 
-  function formatNum(n: number | undefined | null) {
-    if (n === undefined || n === null || isNaN(Number(n))) return '—'
+  function toggleLast25() {
+    showLast25 = !showLast25
+    if (showLast25) {
+      const start = Math.floor(fullActuals.length * 0.75)
+      buildChart(fullActuals.slice(start), fullPreds, fullPreds2)
+      chartLabels = fullActuals.slice(start).map((_, i) => `P${start + i + 1}`)
+    } else {
+      buildChart(fullActuals, fullPreds, fullPreds2)
+    }
+  }
+
+  function exportCSV() {
+    if (!result) return
+    const col = $columns.find(c => c.columnName === colName)
+    const actuals = col?.actualValues ?? []
+    const predLen = fullPreds.length
+    const trainLen = actuals.length - predLen
+    const rows = [['Period', 'Actual', algo === 'gas' ? 'Weighted SES' : 'Forecast', ...(algo === 'gas' ? ['Weighted HWES'] : []), 'Residual']]
+    actuals.forEach((v, i) => {
+      const pi = i - trainLen
+      const fv = pi >= 0 ? fullPreds[pi] : null
+      const fv2 = pi >= 0 && fullPreds2.length ? fullPreds2[pi] : null
+      const res = fv != null ? (Number(v) - fv).toFixed(4) : ''
+      rows.push([`P${i+1}`, String(v), fv != null ? fv.toFixed(4) : '', ...(algo === 'gas' ? [fv2 != null ? fv2.toFixed(4) : ''] : []), res])
+    })
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = `${colName}_${algo}_forecast.csv`
+    a.click()
+  }
+
+  function fmt(n: number | undefined | null) {
+    if (n == null || isNaN(Number(n))) return '—'
     return Number(n).toFixed(4)
   }
 
-  function getMetrics(r: ForecastResult) {
-    if (algo === 'gas') {
-      return [
-        { label: 'MSE (SES)', value: formatNum(r.mse) },
-        { label: 'MAE (SES)', value: formatNum(r.mae) },
-        { label: 'RMSE (SES)', value: formatNum(r.rmse) },
-        { label: 'MAPE (SES)', value: formatNum(r.mape) },
-        { label: 'MSE (HWES)', value: formatNum(r.mse2) },
-        { label: 'MAE (HWES)', value: formatNum(r.mae2) },
-        { label: 'RMSE (HWES)', value: formatNum(r.rmse2) },
-        { label: 'MAPE (HWES)', value: formatNum(r.mape2) },
-      ]
-    }
-    return [
-      { label: 'MSE', value: formatNum(r.mse) },
-      { label: 'MAE', value: formatNum(r.mae) },
-      { label: 'RMSE', value: formatNum(r.rmse) },
-      { label: 'MAPE', value: formatNum(r.mape) },
-    ]
-  }
+  $: metrics = result ? (algo === 'gas' ? [
+    { label: 'MSE (SES)',  value: fmt(result.mse),   color: 'indigo' },
+    { label: 'MAE (SES)',  value: fmt(result.mae),   color: 'indigo' },
+    { label: 'RMSE (SES)', value: fmt(result.rmse),  color: 'indigo' },
+    { label: 'MAPE (SES)', value: fmt(result.mape),  color: 'indigo' },
+    { label: 'MSE (HWES)', value: fmt(result.mse2),  color: 'pink' },
+    { label: 'MAE (HWES)', value: fmt(result.mae2),  color: 'pink' },
+    { label: 'RMSE (HWES)',value: fmt(result.rmse2), color: 'pink' },
+    { label: 'MAPE (HWES)',value: fmt(result.mape2), color: 'pink' },
+  ] : [
+    { label: 'MSE',  value: fmt(result.mse),  color: 'indigo' },
+    { label: 'MAE',  value: fmt(result.mae),  color: 'indigo' },
+    { label: 'RMSE', value: fmt(result.rmse), color: 'indigo' },
+    { label: 'MAPE', value: fmt(result.mape), color: 'indigo' },
+  ]) : []
+
+  $: tableRows = (() => {
+    if (!result) return []
+    const col = $columns.find(c => c.columnName === colName)
+    const actuals = col?.actualValues ?? []
+    const predLen = fullPreds.length
+    const trainLen = actuals.length - predLen
+    return actuals.map((v, i) => {
+      const pi = i - trainLen
+      const fv  = pi >= 0 ? fullPreds[pi]  : null
+      const fv2 = pi >= 0 && fullPreds2.length ? fullPreds2[pi] : null
+      const res = fv != null ? Number(v) - fv : null
+      return { period: i + 1, actual: Number(v), fv, fv2, res }
+    }).filter(r => r.fv != null)
+  })()
 </script>
 
 <div class="page">
   <header>
-    <button class="back-btn" on:click={() => currentPage.set('home')}>
+    <button class="nav-btn" on:click={() => currentPage.set('home')}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       Home
     </button>
@@ -155,26 +189,21 @@
     </button>
   </header>
 
-  <!-- Controls -->
   <div class="controls">
     <div class="control-group">
       <span class="ctrl-label">Dataset</span>
-      <button class="ctrl-btn upload" aria-label="Upload CSV" on:click={() => uploadOpen = true}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <button class="ctrl-btn upload" on:click={() => uploadOpen = true}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Upload CSV
       </button>
     </div>
-
     <div class="control-group">
       <label for="col">Data Column</label>
       <select id="col" bind:value={colName}>
         <option value="">Select column</option>
-        {#each $columns as col}
-          <option value={col.columnName}>{col.columnName}</option>
-        {/each}
+        {#each $columns as col}<option value={col.columnName}>{col.columnName}</option>{/each}
       </select>
     </div>
-
     <div class="control-group">
       <label for="algo">Algorithm</label>
       <select id="algo" bind:value={algo}>
@@ -183,7 +212,6 @@
         <option value="gas">GAS (Hybrid)</option>
       </select>
     </div>
-
     <div class="control-group">
       <label for="log">Log Transform</label>
       <select id="log" bind:value={logTransform}>
@@ -191,44 +219,51 @@
         <option value="yes">Yes (log₁₀)</option>
       </select>
     </div>
-
     {#if showSeason}
       <div class="control-group">
         <label for="season">Season Length</label>
         <input id="season" type="number" min="0" bind:value={seasonLength} />
       </div>
     {/if}
-
     <div class="control-group run-group">
-      <button class="ctrl-btn run" aria-label="Run Forecast" on:click={forecast} disabled={loading}>
-        {#if loading}
-          <span class="spinner"></span> Running…
+      <button class="ctrl-btn run" on:click={forecast} disabled={loading}>
+        {#if loading}<span class="spinner"></span> Running…
         {:else}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Run Forecast
         {/if}
       </button>
     </div>
+    {#if result}
+      <div class="control-group">
+        <span class="ctrl-label">View</span>
+        <button class="ctrl-btn toggle {showLast25 ? 'active' : ''}" on:click={toggleLast25}>
+          {showLast25 ? 'Show Full Data' : 'Last 25%'}
+        </button>
+      </div>
+      <div class="control-group">
+        <span class="ctrl-label">Export</span>
+        <button class="ctrl-btn export" on:click={exportCSV}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    {/if}
   </div>
 
-  {#if error}
-    <div class="error-bar">{error}</div>
-  {/if}
+  {#if error}<div class="error-bar">{error}</div>{/if}
 
   <div class="main">
-    <!-- Chart -->
     <div class="chart-card">
       <div class="card-header">
         <span class="card-title">Forecast Chart</span>
-        {#if result}
-          <span class="tag">{result.algoType?.toUpperCase()} · {result.timeComputed}</span>
-        {/if}
+        {#if result}<span class="tag">{result.algoType?.toUpperCase()} · {result.timeComputed}</span>{/if}
       </div>
       <div class="chart-wrap">
         {#if chartDatasets.length}
           <Chart labels={chartLabels} datasets={chartDatasets} />
         {:else}
-          <div class="empty-chart">
+          <div class="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             <p>Run a forecast to see results</p>
           </div>
@@ -237,12 +272,11 @@
     </div>
 
     {#if result}
-      <!-- Metrics -->
       <div class="metrics-card">
         <div class="card-header"><span class="card-title">Performance Metrics</span></div>
         <div class="metrics-grid">
-          {#each getMetrics(result) as m}
-            <div class="metric">
+          {#each metrics as m}
+            <div class="metric metric-{m.color}">
               <div class="metric-label">{m.label}</div>
               <div class="metric-value">{m.value}</div>
             </div>
@@ -260,9 +294,11 @@
         {/if}
       </div>
 
-      <!-- Table -->
       <div class="table-card">
-        <div class="card-header"><span class="card-title">Forecast Values</span></div>
+        <div class="card-header">
+          <span class="card-title">Forecast Values <span class="sub">(test set — last 25%)</span></span>
+          <span class="tag">{tableRows.length} periods</span>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -275,21 +311,15 @@
               </tr>
             </thead>
             <tbody>
-              {#each $columns.find(c => c.columnName === colName)?.actualValues ?? [] as actual, i}
-                {@const allActuals = $columns.find(c => c.columnName === colName)?.actualValues ?? []}
-                {@const totalLen = allActuals.length}
-                {@const predLen = result.predictionValues?.length ?? 0}
-                {@const trainLen = totalLen - predLen}
-                {@const predIdx = i - trainLen}
-                {@const forecast_val = predIdx >= 0 ? result.predictionValues?.[predIdx] : null}
-                {@const hwes_val = predIdx >= 0 ? result.predictionValues2?.[predIdx] : null}
-                {@const residual = forecast_val != null ? (Number(actual) - Number(forecast_val)).toFixed(4) : '—'}
+              {#each tableRows as row}
                 <tr>
-                  <td>{i + 1}</td>
-                  <td>{Number(actual).toFixed(4)}</td>
-                  <td>{forecast_val != null ? Number(forecast_val).toFixed(4) : '—'}</td>
-                  {#if algo === 'gas'}<td>{hwes_val != null ? Number(hwes_val).toFixed(4) : '—'}</td>{/if}
-                  <td class:neg={Number(residual) < 0}>{residual}</td>
+                  <td class="period">P{row.period}</td>
+                  <td>{row.actual.toFixed(4)}</td>
+                  <td>{row.fv != null ? row.fv.toFixed(4) : '—'}</td>
+                  {#if algo === 'gas'}<td>{row.fv2 != null ? row.fv2.toFixed(4) : '—'}</td>{/if}
+                  <td class:pos={row.res != null && row.res > 0} class:neg={row.res != null && row.res < 0}>
+                    {row.res != null ? row.res.toFixed(4) : '—'}
+                  </td>
                 </tr>
               {/each}
             </tbody>
@@ -303,115 +333,121 @@
 <UploadModal bind:open={uploadOpen} on:uploaded={loadColumns} />
 
 {#if loading}
-  <div class="loading-overlay">
-    <div class="spinner large"></div>
-  </div>
+  <div class="loading-overlay"><div class="spinner large"></div></div>
 {/if}
 
 <style>
-  .page { min-height: 100vh; display: flex; flex-direction: column; }
+  .page { min-height: 100vh; display: flex; flex-direction: column; background: #0a0a0f; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.9rem 1.5rem;
-    background: #0f172a; border-bottom: 1px solid #1e293b;
+    padding: 0.85rem 1.5rem;
+    background: #151520; border-bottom: 1px solid #3a3a4a;
     position: sticky; top: 0; z-index: 10;
   }
-  h1 { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
-  .back-btn, .nav-btn {
+  h1 { font-size: 1.1rem; font-weight: 700; color: #f0f0f5; }
+
+  .nav-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 1rem; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 500; cursor: pointer;
-    transition: all 0.2s; border: 1px solid #334155;
-    background: none; color: #94a3b8;
+    padding: 0.5rem 1rem; border-radius: 7px;
+    font-size: 0.84rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; border: 1px solid #3a3a4a;
+    background: none; color: #a0a0b0;
   }
-  .back-btn:hover { color: #e2e8f0; border-color: #475569; }
-  .nav-btn.accent { background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; }
+  .nav-btn:hover { color: #f0f0f5; border-color: #5a5a6a; }
+  .nav-btn.accent { background: linear-gradient(135deg, #7b68ee, #6a5acd); border: none; color: white; }
   .nav-btn.accent:hover { opacity: 0.9; }
 
   .controls {
-    display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+    display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: flex-end;
     padding: 1rem 1.5rem;
-    background: #0f172a; border-bottom: 1px solid #1e293b;
+    background: #151520; border-bottom: 1px solid #3a3a4a;
   }
-  .control-group { display: flex; flex-direction: column; gap: 0.35rem; min-width: 140px; }
-  label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #475569; font-weight: 600; }
-  .ctrl-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #475569; font-weight: 600; }
+  .control-group { display: flex; flex-direction: column; gap: 0.35rem; min-width: 130px; }
+  label, .ctrl-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px; color: #5a5a7a; font-weight: 600; }
   select, input[type="number"] {
     padding: 0.6rem 0.8rem;
-    background: #1e293b; border: 1px solid #334155;
-    border-radius: 8px; color: #e2e8f0; font-size: 0.88rem;
+    background: #202030; border: 1px solid #3a3a4a;
+    border-radius: 7px; color: #f0f0f5; font-size: 0.87rem;
     transition: border-color 0.2s;
   }
-  select:focus, input:focus { outline: none; border-color: #6366f1; }
+  select:focus, input:focus { outline: none; border-color: #7b68ee; }
+
   .ctrl-btn {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1.1rem; border-radius: 8px;
-    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border-radius: 7px;
+    font-size: 0.87rem; font-weight: 600; cursor: pointer;
     border: none; transition: all 0.2s;
   }
-  .ctrl-btn.upload { background: #1e293b; border: 1px solid #334155; color: #94a3b8; }
-  .ctrl-btn.upload:hover { border-color: #6366f1; color: #e2e8f0; }
-  .ctrl-btn.run { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
-  .ctrl-btn.run:hover:not(:disabled) { opacity: 0.9; }
-  .ctrl-btn.run:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ctrl-btn.upload { background: #202030; border: 1px solid #3a3a4a; color: #a0a0b0; }
+  .ctrl-btn.upload:hover { border-color: #7b68ee; color: #f0f0f5; }
+  .ctrl-btn.run { background: linear-gradient(135deg, #7b68ee, #6a5acd); color: white; }
+  .ctrl-btn.run:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  .ctrl-btn.run:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ctrl-btn.toggle { background: #202030; border: 1px solid #3a3a4a; color: #a0a0b0; }
+  .ctrl-btn.toggle:hover, .ctrl-btn.toggle.active { border-color: #7b68ee; color: #7b68ee; }
+  .ctrl-btn.export { background: #202030; border: 1px solid #3a3a4a; color: #a0a0b0; }
+  .ctrl-btn.export:hover { border-color: #ffcc66; color: #ffcc66; }
 
   .error-bar {
     margin: 0.8rem 1.5rem; padding: 0.7rem 1rem;
-    background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
-    border-radius: 8px; color: #f87171; font-size: 0.88rem;
+    background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 7px; color: #ff6b6b; font-size: 0.87rem;
   }
 
   .main { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-  /* Cards */
   .chart-card, .metrics-card, .table-card {
-    background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden;
+    background: #151520; border: 1px solid #3a3a4a; border-radius: 10px; overflow: hidden;
   }
   .card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.9rem 1.2rem; border-bottom: 1px solid #334155;
+    padding: 0.85rem 1.2rem; border-bottom: 1px solid #3a3a4a;
   }
-  .card-title { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
-  .tag { font-size: 0.75rem; color: #6366f1; background: rgba(99,102,241,0.1); padding: 0.25rem 0.7rem; border-radius: 100px; }
+  .card-title { font-size: 0.87rem; font-weight: 600; color: #f0f0f5; }
+  .card-title .sub { font-size: 0.75rem; color: #5a5a7a; font-weight: 400; margin-left: 0.4rem; }
+  .tag { font-size: 0.73rem; color: #7b68ee; background: rgba(123,104,238,0.12); padding: 0.22rem 0.65rem; border-radius: 100px; }
 
   .chart-wrap { height: 360px; padding: 1rem; }
-  .empty-chart {
+  .empty-state {
     height: 100%; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 0.8rem;
   }
-  .empty-chart p { color: #334155; font-size: 0.88rem; }
+  .empty-state p { color: #3a3a4a; font-size: 0.87rem; }
 
-  /* Metrics */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1px; background: #334155; }
-  .metric { background: #1e293b; padding: 1rem 1.2rem; }
-  .metric-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 0.4rem; }
-  .metric-value { font-size: 1.3rem; font-weight: 700; color: #6366f1; font-variant-numeric: tabular-nums; }
-  .params { display: flex; flex-wrap: wrap; gap: 0.8rem; padding: 0.8rem 1.2rem; border-top: 1px solid #334155; }
-  .param { font-size: 0.82rem; color: #64748b; background: #0f172a; padding: 0.3rem 0.7rem; border-radius: 6px; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: #3a3a4a; }
+  .metric { background: #151520; padding: 1rem 1.2rem; transition: background 0.2s; }
+  .metric:hover { background: #1e1e2e; }
+  .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5a5a7a; margin-bottom: 0.4rem; }
+  .metric-value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .metric-indigo .metric-value { color: #7b68ee; }
+  .metric-pink .metric-value { color: #fd79a8; }
 
-  /* Table */
-  .table-wrap { max-height: 320px; overflow-y: auto; }
+  .params { display: flex; flex-wrap: wrap; gap: 0.7rem; padding: 0.8rem 1.2rem; border-top: 1px solid #3a3a4a; }
+  .param { font-size: 0.81rem; color: #5a5a7a; background: #0a0a0f; padding: 0.28rem 0.65rem; border-radius: 6px; }
+
+  .table-wrap { max-height: 340px; overflow-y: auto; }
   .table-wrap::-webkit-scrollbar { width: 5px; }
-  .table-wrap::-webkit-scrollbar-track { background: #0f172a; }
-  .table-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .table-wrap::-webkit-scrollbar-track { background: #0a0a0f; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 3px; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 0.55rem 1rem; text-align: left; border-bottom: 1px solid #1e293b; font-size: 0.82rem; }
-  th { color: #475569; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: #0f172a; }
-  td { color: #94a3b8; }
-  tr:hover td { background: rgba(99,102,241,0.04); }
-  td.neg { color: #f87171; }
+  th, td { padding: 0.52rem 1rem; text-align: left; border-bottom: 1px solid #1e1e2e; font-size: 0.81rem; }
+  th { color: #5a5a7a; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: #0a0a0f; }
+  td { color: #a0a0b0; }
+  td.period { color: #5a5a7a; }
+  td.pos { color: #00d4aa; }
+  td.neg { color: #ff6b6b; }
+  tr:hover td { background: rgba(123,104,238,0.04); }
 
-  /* Loading */
   .loading-overlay {
     position: fixed; inset: 0;
-    background: rgba(10,15,28,0.8); backdrop-filter: blur(4px);
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(4px);
     display: flex; align-items: center; justify-content: center; z-index: 50;
   }
   .spinner {
     width: 28px; height: 28px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: #6366f1;
+    border: 2px solid rgba(255,255,255,0.08);
+    border-top-color: #7b68ee;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;

@@ -14,20 +14,18 @@
   let logTransform = 'no'
   let seasonLength = 0
   let horizon = 12
-  let showSeason = false
+  let showZoomed = false
 
   $: showSeason = algo === 'hwes' || algo === 'gas'
   $: if (!showSeason) seasonLength = 0
 
   let chartLabels: string[] = []
   let chartDatasets: any[] = []
+  let actualValues: number[] = []
 
   onMount(async () => {
     if ($columns.length === 0) {
-      try {
-        const data = await fetchColumns()
-        columns.set(data)
-      } catch {}
+      try { const data = await fetchColumns(); columns.set(data) } catch {}
     }
   })
 
@@ -35,10 +33,10 @@
     if (!colName) { error = 'Select a data column first.'; return }
     error = ''
     loading = true
+    showZoomed = false
     try {
       const col = $columns.find(c => c.columnName === colName)
       if (!col) throw new Error('Column not found.')
-
       const payload = {
         input: col.actualValues,
         algoType: algo,
@@ -46,37 +44,47 @@
         logTransform,
         seasonLength: algo === 'ses' ? 1 : seasonLength,
       }
-
       result = await runPrediction(payload, horizon)
-      buildChart(col.actualValues.map(Number), result)
-    } catch (e: any) {
-      error = e.message
-    } finally {
-      loading = false
-    }
+      actualValues = col.actualValues.map(Number)
+      buildChart(actualValues, result)
+    } catch (e: any) { error = e.message }
+    finally { loading = false }
   }
 
-  function buildChart(actual: number[], r: ForecastResult) {
-    const actLen = actual.length
+  function buildChart(actuals: number[], r: ForecastResult, zoomed = false) {
+    const actLen = actuals.length
     const futureLabels = Array.from({ length: horizon }, (_, i) => `F${i + 1}`)
-    chartLabels = [...actual.map((_, i) => `P${i + 1}`), ...futureLabels]
 
-    const nullPad = Array(actLen).fill(null)
+    let displayActuals = actuals
+    let nullPad: null[]
+
+    if (zoomed) {
+      const start = Math.floor(actLen * 0.75)
+      displayActuals = actuals.slice(start)
+      chartLabels = [
+        ...displayActuals.map((_, i) => `P${start + i + 1}`),
+        ...futureLabels
+      ]
+      nullPad = Array(displayActuals.length).fill(null)
+    } else {
+      chartLabels = [...actuals.map((_, i) => `P${i + 1}`), ...futureLabels]
+      nullPad = Array(actLen).fill(null)
+    }
 
     chartDatasets = [
       {
         label: 'Historical',
-        data: [...actual, ...Array(horizon).fill(null)],
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99,102,241,0.06)',
+        data: [...displayActuals, ...Array(horizon).fill(null)],
+        borderColor: '#7b68ee',
+        backgroundColor: 'rgba(123,104,238,0.07)',
         tension: 0.4, fill: true,
-        pointRadius: actLen > 100 ? 0 : 2,
+        pointRadius: displayActuals.length > 100 ? 0 : 2,
         borderWidth: 2,
       },
       {
         label: algo === 'gas' ? 'Weighted SES' : 'Prediction',
         data: [...nullPad, ...(r.predictionValues?.map(Number) ?? [])],
-        borderColor: '#10b981',
+        borderColor: '#00d4aa',
         backgroundColor: 'transparent',
         tension: 0.4, fill: false,
         borderDash: [5, 3],
@@ -86,11 +94,11 @@
     ]
 
     if (algo === 'gas') {
-      if (r.predictionValues2) {
+      if (r.predictionValues2?.length) {
         chartDatasets.push({
           label: 'Weighted HWES',
           data: [...nullPad, ...r.predictionValues2.map(Number)],
-          borderColor: '#06b6d4',
+          borderColor: '#fd79a8',
           backgroundColor: 'transparent',
           tension: 0.4, fill: false,
           borderDash: [5, 3],
@@ -98,11 +106,11 @@
           borderWidth: 2,
         })
       }
-      if (r.preditionValuesAverage) {
+      if (r.preditionValuesAverage?.length) {
         chartDatasets.push({
           label: 'GAS Combined',
           data: [...nullPad, ...r.preditionValuesAverage.map(Number)],
-          borderColor: '#f59e0b',
+          borderColor: '#ffcc66',
           backgroundColor: 'transparent',
           tension: 0.4, fill: false,
           pointRadius: 3,
@@ -112,11 +120,16 @@
     }
   }
 
+  function toggleZoom() {
+    if (!result) return
+    showZoomed = !showZoomed
+    buildChart(actualValues, result, showZoomed)
+  }
+
   function exportCSV() {
     if (!result) return
-    const col = $columns.find(c => c.columnName === colName)
     const rows = [['Period', 'Type', 'Value']]
-    col?.actualValues.forEach((v, i) => rows.push([`P${i + 1}`, 'Actual', String(v)]))
+    actualValues.forEach((v, i) => rows.push([`P${i + 1}`, 'Actual', String(v)]))
     result.predictionValues?.forEach((v, i) => rows.push([`F${i + 1}`, algo === 'gas' ? 'Weighted SES' : 'Prediction', String(v)]))
     result.predictionValues2?.forEach((v, i) => rows.push([`F${i + 1}`, 'Weighted HWES', String(v)]))
     result.preditionValuesAverage?.forEach((v, i) => rows.push([`F${i + 1}`, 'GAS Combined', String(v)]))
@@ -126,17 +139,22 @@
     a.download = `${colName}_${algo}_prediction.csv`
     a.click()
   }
+
+  function fmt(v: any) {
+    if (v == null) return '—'
+    return Number(v).toFixed(4)
+  }
 </script>
 
 <div class="page">
   <header>
-    <button class="back-btn" on:click={() => currentPage.set('validate')}>
+    <button class="nav-btn" on:click={() => currentPage.set('validate')}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       Back to Validation
     </button>
     <h1>Prediction — Future Forecast</h1>
-    <button class="export-btn" on:click={exportCSV} disabled={!result}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <button class="nav-btn export" on:click={exportCSV} disabled={!result}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Export CSV
     </button>
   </header>
@@ -146,12 +164,9 @@
       <label for="col">Data Column</label>
       <select id="col" bind:value={colName}>
         <option value="">Select column</option>
-        {#each $columns as col}
-          <option value={col.columnName}>{col.columnName}</option>
-        {/each}
+        {#each $columns as col}<option value={col.columnName}>{col.columnName}</option>{/each}
       </select>
     </div>
-
     <div class="control-group">
       <label for="algo">Algorithm</label>
       <select id="algo" bind:value={algo}>
@@ -160,7 +175,6 @@
         <option value="gas">GAS (Hybrid)</option>
       </select>
     </div>
-
     <div class="control-group">
       <label for="log">Log Transform</label>
       <select id="log" bind:value={logTransform}>
@@ -168,49 +182,49 @@
         <option value="yes">Yes (log₁₀)</option>
       </select>
     </div>
-
     {#if showSeason}
       <div class="control-group">
         <label for="season">Season Length</label>
         <input id="season" type="number" min="0" bind:value={seasonLength} />
       </div>
     {/if}
-
     <div class="control-group">
       <label for="horizon">Forecast Horizon</label>
       <input id="horizon" type="number" min="1" max="365" bind:value={horizon} />
     </div>
-
     <div class="control-group run-group">
-      <button class="ctrl-btn run" aria-label="Generate Prediction" on:click={predict} disabled={loading}>
-        {#if loading}
-          <span class="spinner"></span> Predicting…
+      <button class="ctrl-btn run" on:click={predict} disabled={loading}>
+        {#if loading}<span class="spinner"></span> Predicting…
         {:else}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Generate Prediction
         {/if}
       </button>
     </div>
+    {#if result}
+      <div class="control-group">
+        <span class="ctrl-label">View</span>
+        <button class="ctrl-btn toggle {showZoomed ? 'active' : ''}" on:click={toggleZoom}>
+          {showZoomed ? 'Reset Zoom' : 'Zoom Last 25%'}
+        </button>
+      </div>
+    {/if}
   </div>
 
-  {#if error}
-    <div class="error-bar">{error}</div>
-  {/if}
+  {#if error}<div class="error-bar">{error}</div>{/if}
 
   <div class="main">
     <div class="chart-card">
       <div class="card-header">
         <span class="card-title">Prediction Chart</span>
-        {#if result}
-          <span class="tag">{horizon} periods ahead</span>
-        {/if}
+        {#if result}<span class="tag">{horizon} periods ahead · {result.algoType?.toUpperCase()}</span>{/if}
       </div>
       <div class="chart-wrap">
         {#if chartDatasets.length}
           <Chart labels={chartLabels} datasets={chartDatasets} />
         {:else}
-          <div class="empty-chart">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3a3a4a" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             <p>Generate a prediction to see future values</p>
           </div>
         {/if}
@@ -219,9 +233,11 @@
 
     {#if result}
       <div class="tables-row">
-        <!-- Prediction values -->
         <div class="table-card">
-          <div class="card-header"><span class="card-title">Future Predictions</span></div>
+          <div class="card-header">
+            <span class="card-title">Future Predictions</span>
+            <span class="tag">{horizon} periods</span>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -230,7 +246,7 @@
                   {#if algo === 'gas'}
                     <th>Weighted SES</th>
                     <th>Weighted HWES</th>
-                    <th>GAS Combined</th>
+                    <th class="highlight-th">GAS Combined</th>
                   {:else}
                     <th>Predicted Value</th>
                   {/if}
@@ -241,11 +257,11 @@
                   <tr>
                     <td class="period">F{i + 1}</td>
                     {#if algo === 'gas'}
-                      <td>{result.predictionValues?.[i] != null ? Number(result.predictionValues[i]).toFixed(4) : '—'}</td>
-                      <td>{result.predictionValues2?.[i] != null ? Number(result.predictionValues2[i]).toFixed(4) : '—'}</td>
-                      <td class="highlight">{result.preditionValuesAverage?.[i] != null ? Number(result.preditionValuesAverage[i]).toFixed(4) : '—'}</td>
+                      <td>{fmt(result.predictionValues?.[i])}</td>
+                      <td>{fmt(result.predictionValues2?.[i])}</td>
+                      <td class="highlight">{fmt(result.preditionValuesAverage?.[i])}</td>
                     {:else}
-                      <td>{result.predictionValues?.[i] != null ? Number(result.predictionValues[i]).toFixed(4) : '—'}</td>
+                      <td>{fmt(result.predictionValues?.[i])}</td>
                     {/if}
                   </tr>
                 {/each}
@@ -254,18 +270,18 @@
           </div>
         </div>
 
-        <!-- Historical data -->
         <div class="table-card">
-          <div class="card-header"><span class="card-title">Historical Data</span></div>
+          <div class="card-header">
+            <span class="card-title">Historical Data</span>
+            <span class="tag">{actualValues.length} periods</span>
+          </div>
           <div class="table-wrap">
             <table>
-              <thead>
-                <tr><th>Period</th><th>Actual Value</th></tr>
-              </thead>
+              <thead><tr><th>Period</th><th>Actual Value</th></tr></thead>
               <tbody>
-                {#each $columns.find(c => c.columnName === colName)?.actualValues ?? [] as v, i}
+                {#each actualValues as v, i}
                   <tr>
-                    <td>P{i + 1}</td>
+                    <td class="period">P{i + 1}</td>
                     <td>{Number(v).toFixed(4)}</td>
                   </tr>
                 {/each}
@@ -274,115 +290,149 @@
           </div>
         </div>
       </div>
+
+      {#if result.alphaSes}
+        <div class="params-card">
+          <div class="card-header"><span class="card-title">Model Parameters</span></div>
+          <div class="params">
+            <div class="param-item">
+              <span class="param-label">α SES</span>
+              <span class="param-val">{result.alphaSes?.toFixed(4)}</span>
+            </div>
+            {#if algo !== 'ses'}
+              <div class="param-item">
+                <span class="param-label">α HWES</span>
+                <span class="param-val">{result.alphaHwes?.toFixed(4)}</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">β (Beta)</span>
+                <span class="param-val">{result.beta?.toFixed(4)}</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">γ (Gamma)</span>
+                <span class="param-val">{result.gamma?.toFixed(4)}</span>
+              </div>
+            {/if}
+            <div class="param-item">
+              <span class="param-label">Time</span>
+              <span class="param-val time">{result.timeComputed}</span>
+            </div>
+          </div>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
 
 {#if loading}
-  <div class="loading-overlay">
-    <div class="spinner large"></div>
-  </div>
+  <div class="loading-overlay"><div class="spinner large"></div></div>
 {/if}
 
 <style>
-  .page { min-height: 100vh; display: flex; flex-direction: column; }
+  .page { min-height: 100vh; display: flex; flex-direction: column; background: #0a0a0f; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.9rem 1.5rem;
-    background: #0f172a; border-bottom: 1px solid #1e293b;
+    padding: 0.85rem 1.5rem;
+    background: #151520; border-bottom: 1px solid #3a3a4a;
     position: sticky; top: 0; z-index: 10;
   }
-  h1 { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
-  .back-btn {
+  h1 { font-size: 1.1rem; font-weight: 700; color: #f0f0f5; }
+
+  .nav-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 1rem; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 500; cursor: pointer;
-    transition: all 0.2s; border: 1px solid #334155;
-    background: none; color: #94a3b8;
+    padding: 0.5rem 1rem; border-radius: 7px;
+    font-size: 0.84rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; border: 1px solid #3a3a4a;
+    background: none; color: #a0a0b0;
   }
-  .back-btn:hover { color: #e2e8f0; border-color: #475569; }
-  .export-btn {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 1rem; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 500; cursor: pointer;
-    border: 1px solid #334155; background: none; color: #94a3b8;
-    transition: all 0.2s;
-  }
-  .export-btn:not(:disabled):hover { border-color: #10b981; color: #10b981; }
-  .export-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-btn:hover { color: #f0f0f5; border-color: #5a5a6a; }
+  .nav-btn.export { color: #a0a0b0; }
+  .nav-btn.export:not(:disabled):hover { border-color: #ffcc66; color: #ffcc66; }
+  .nav-btn.export:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .controls {
-    display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+    display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: flex-end;
     padding: 1rem 1.5rem;
-    background: #0f172a; border-bottom: 1px solid #1e293b;
+    background: #151520; border-bottom: 1px solid #3a3a4a;
   }
-  .control-group { display: flex; flex-direction: column; gap: 0.35rem; min-width: 140px; }
-  label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #475569; font-weight: 600; }
+  .control-group { display: flex; flex-direction: column; gap: 0.35rem; min-width: 130px; }
+  label, .ctrl-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px; color: #5a5a7a; font-weight: 600; }
   select, input[type="number"] {
     padding: 0.6rem 0.8rem;
-    background: #1e293b; border: 1px solid #334155;
-    border-radius: 8px; color: #e2e8f0; font-size: 0.88rem;
+    background: #202030; border: 1px solid #3a3a4a;
+    border-radius: 7px; color: #f0f0f5; font-size: 0.87rem;
     transition: border-color 0.2s;
   }
-  select:focus, input:focus { outline: none; border-color: #6366f1; }
+  select:focus, input:focus { outline: none; border-color: #7b68ee; }
+
   .ctrl-btn {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1.1rem; border-radius: 8px;
-    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border-radius: 7px;
+    font-size: 0.87rem; font-weight: 600; cursor: pointer;
     border: none; transition: all 0.2s;
   }
-  .ctrl-btn.run { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
-  .ctrl-btn.run:hover:not(:disabled) { opacity: 0.9; }
-  .ctrl-btn.run:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ctrl-btn.run { background: linear-gradient(135deg, #7b68ee, #6a5acd); color: white; }
+  .ctrl-btn.run:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  .ctrl-btn.run:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ctrl-btn.toggle { background: #202030; border: 1px solid #3a3a4a; color: #a0a0b0; }
+  .ctrl-btn.toggle:hover, .ctrl-btn.toggle.active { border-color: #7b68ee; color: #7b68ee; }
 
   .error-bar {
     margin: 0.8rem 1.5rem; padding: 0.7rem 1rem;
-    background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
-    border-radius: 8px; color: #f87171; font-size: 0.88rem;
+    background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 7px; color: #ff6b6b; font-size: 0.87rem;
   }
 
   .main { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-  .chart-card, .table-card {
-    background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden;
+  .chart-card, .table-card, .params-card {
+    background: #151520; border: 1px solid #3a3a4a; border-radius: 10px; overflow: hidden;
   }
   .card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.9rem 1.2rem; border-bottom: 1px solid #334155;
+    padding: 0.85rem 1.2rem; border-bottom: 1px solid #3a3a4a;
   }
-  .card-title { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
-  .tag { font-size: 0.75rem; color: #10b981; background: rgba(16,185,129,0.1); padding: 0.25rem 0.7rem; border-radius: 100px; }
+  .card-title { font-size: 0.87rem; font-weight: 600; color: #f0f0f5; }
+  .tag { font-size: 0.73rem; color: #00d4aa; background: rgba(0,212,170,0.1); padding: 0.22rem 0.65rem; border-radius: 100px; }
 
   .chart-wrap { height: 380px; padding: 1rem; }
-  .empty-chart {
+  .empty-state {
     height: 100%; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 0.8rem;
   }
-  .empty-chart p { color: #334155; font-size: 0.88rem; }
+  .empty-state p { color: #3a3a4a; font-size: 0.87rem; }
 
   .tables-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+
   .table-wrap { max-height: 340px; overflow-y: auto; }
   .table-wrap::-webkit-scrollbar { width: 5px; }
-  .table-wrap::-webkit-scrollbar-track { background: #0f172a; }
-  .table-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .table-wrap::-webkit-scrollbar-track { background: #0a0a0f; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 3px; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 0.55rem 1rem; text-align: left; border-bottom: 1px solid #1e293b; font-size: 0.82rem; }
-  th { color: #475569; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: #0f172a; }
-  td { color: #94a3b8; }
-  td.period { color: #64748b; }
-  td.highlight { color: #f59e0b; font-weight: 600; }
-  tr:hover td { background: rgba(99,102,241,0.04); }
+  th, td { padding: 0.52rem 1rem; text-align: left; border-bottom: 1px solid #1e1e2e; font-size: 0.81rem; }
+  th { color: #5a5a7a; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: #0a0a0f; }
+  td { color: #a0a0b0; }
+  td.period { color: #5a5a7a; }
+  td.highlight { color: #ffcc66; font-weight: 600; }
+  .highlight-th { color: #ffcc66 !important; }
+  tr:hover td { background: rgba(123,104,238,0.04); }
+
+  .params { display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.2rem; }
+  .param-item { display: flex; flex-direction: column; gap: 0.25rem; }
+  .param-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5a5a7a; }
+  .param-val { font-size: 1rem; font-weight: 600; color: #7b68ee; font-variant-numeric: tabular-nums; }
+  .param-val.time { color: #00d4aa; font-size: 0.87rem; }
 
   .loading-overlay {
     position: fixed; inset: 0;
-    background: rgba(10,15,28,0.8); backdrop-filter: blur(4px);
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(4px);
     display: flex; align-items: center; justify-content: center; z-index: 50;
   }
   .spinner {
     width: 28px; height: 28px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: #6366f1;
+    border: 2px solid rgba(255,255,255,0.08);
+    border-top-color: #7b68ee;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;
@@ -390,9 +440,7 @@
   .spinner.large { width: 44px; height: 44px; border-width: 3px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  @media (max-width: 900px) {
-    .tables-row { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 900px) { .tables-row { grid-template-columns: 1fr; } }
   @media (max-width: 768px) {
     header { flex-direction: column; gap: 0.6rem; text-align: center; }
     .controls { flex-direction: column; }
